@@ -4,18 +4,13 @@ simulate_dm <- function(
     property_data,
     phi_mu,
     psi_phi,
-    sigma_dem,
     n_pp,
-    c_road_den,
-    c_rugged,
-    c_canopy,
+    X,
     beta_p,
-    demographic_stochasticity,
+    start_density,
+    method_lookup,
     plot = FALSE
 ){
-
-  n_county <- max(property_data$county)
-  n_property <- max(property_data$property)
 
   # mean litters per year from VerCauteren et al. 2019 pg 64
   data_litters_per_year <- c(1, 2, 0.86, 1, 2.28, 2.9, 0.49, 0.85, 1.57)
@@ -30,38 +25,18 @@ simulate_dm <- function(
   # ecological process
   zeta <- mean(data_litter_size)*28*1/365 # mean pigs produced per female per 28 days
 
-  county <- property_data$county
-  n_units <- n_property * n_pp
-  survey_area <- property_data$area_property
+  survey_area <- property_data$area
   log_survey_area <- log(survey_area)
 
-  unit <- matrix(1:n_units, n_property, n_pp, byrow = TRUE)
-
-  # methods
-  method_lookup <- tibble(
-    idx = 1:5,
-    method = c("FIREARMS", "FIXED WING", "HELICOPTER", "SNARE", "TRAPS"),
-    freq = c(0.1, 0.05, 0.05, 0.3, 0.5),
-    p_unique = runif(5),
-    rho = c(runif(1, 0.01, 5), # firearms; p_mu[1]
-            runif(1, 5, 30),   # fixed wing
-            runif(1, 5, 30),   # helicopter
-            runif(1, 0.01, 5),  # snare; gamma[1], p_mu[2]
-            runif(1, 0.01, 5)), # traps; gamma[2], p_mu[3]
-    gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
-  )
 
   log_rho <- log(method_lookup$rho)
-  log_gamma <- log(method_lookup$gamma)
-  p_unique <- method_lookup$p_unique
+  log_gamma <- log(method_lookup$gamma[4:5])
+  p_unique <- method_lookup$p_unique[c(1, 4, 5)]
 
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
 
-  # method <- sample.int(5, 1, prob = method_lookup$freq)
-  method <- sample.int(5, 1)
-
-  effort_data <- read_csv("data/insitu/effort_data.csv")
+  effort_data <- read_csv("../pigs-statistical/data/insitu/effort_data.csv")
 
   generate_take_data <- function(m, effort_data){
     x <- effort_data |>
@@ -75,21 +50,42 @@ simulate_dm <- function(
     tibble(effort_per = effort_per, trap_count = tc)
   }
 
+  removal_effort <- property_data$effort
+  sample_occasions <- removal_effort$sample_occasions
+
   # storage
-  N <- matrix(NA, n_property, n_pp)
-  phi <- matrix(NA, n_property, n_pp-1)
+  time_vec <- min(sample_occasions):max(sample_occasions)
+  n_time <- length(time_vec)
+  N <- numeric(m_time)
   pop_growth <- matrix(0, n_property, n_pp-1)
   E <- tibble()
 
-  # initial abundance for each property
-  N[, 1] <- property_data$initial_abundnace
 
-  # for tracking calculations
-  log_area_check <- p_check <- n_passes_track <- 0
+  # spin-up period of 6 primary periods
+  N <- ceiling(survey_area * start_density) # initial abundance
+  for(i in 1:6){
+    phi <- rbeta(1, a_phi, b_phi)
+    lam <- N * zeta / 2 + N * phi
+    N <- rpois(1, lam)
+  }
 
+  if(N == 0) # TODO write exit from property
+
+  for(t in seq_len(n_time)){
+    # determine if we sample during this primary period
+    pp <- time_vec[t]
+    rem <- pp %in% sample_occasions
+    if(rem){
+      # TODO change 1-method properties to have method in effort df
+      # sample_effort <-
+    }
+  }
+
+
+############################################################################
   for(i in seq_len(n_property)){
 
-    # determine which primary periods are sampled for each property
+
     sample_occ <- sample(n_pp, property_data$n_sample_occasions[i])
 
     for(t in seq_len(n_pp)){
