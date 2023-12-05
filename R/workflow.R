@@ -86,21 +86,25 @@ assertthat::are_equal(n_properties, sum(n_rel$n_simulate))
 
 ## the first thing we need to do is assign properties to counties
 max_counties <- 15
-weights <- runif(n_counties)
+weights <- runif(max_counties)
 norm_weights <- weights / sum(weights)
 properties_per_county <- rmulti(1, n_properties, norm_weights)
 properties_per_county <- properties_per_county[properties_per_county > 0]
 n_county <- length(properties_per_county)
 
-## the order each property will be simulated, and which county it goes in
-order_property <- sample.int(n_properties)
-order_county <- rep(1:n_county, times = properties_per_county)
+## randomly assign which county each property goes in
+order_county <- tibble(
+  order_property = sample.int(n_properties),
+  order_county = rep(1:n_county, times = properties_per_county)
+) |>
+  arrange(order_property) |>
+  pull(order_county)
 
 ## we need covariate data
 land_cover <- matrix(rnorm(n_county * 3), n_county, 3)
 
 ## we need the effect of X on detection probability p
-beta_p <- rnorm(3)
+beta_p <- matrix(rnorm(20), 5, 4)
 
 # method lookup table (data model parameters)
 method_lookup <- tibble(
@@ -115,10 +119,39 @@ method_lookup <- tibble(
   gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
 )
 
-i <- 1
-property_data <- properties[[i]]
-X <- land_cover[order_county[i], ]
+
 phi_mu <- config$phi_mu
 psi_phi <- config$psi_phi
 start_density <- config$start_density
+source("R/eco_dynamics.R")
+
+# x <- 1
+# simulate_dm(
+#   properties[[x]],
+#   order_county[x],
+#   phi_mu,
+#   psi_phi,
+#   land_cover[order_county[x], ],
+#   beta_p,
+#   start_density,
+#   method_lookup
+# )
+
+all_dynamics <- 1:n_properties |>
+  map(
+    \(x) simulate_dm(
+      properties[[x]],
+      x,
+      order_county[x],
+      phi_mu,
+      psi_phi,
+      land_cover[order_county[x], ],
+      beta_p,
+      start_density,
+      method_lookup
+    )
+  ) |>
+  list_rbind()
+
+
 
