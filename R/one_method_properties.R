@@ -139,7 +139,9 @@ one_method_properties <- function(df, n_properties, n_pp){
     sample_occasions <- get_sample_occasions(one_method_return, sample_one_method[i], start[i], n_pp)
     n_reps <- get_reps(n_reps_single_method, sample_one_method[i], length(sample_occasions))
 
-    effort <- tibble(sample_occasions = sample_occasions, n_reps = n_reps)
+    effort <- tibble(sample_occasions = sample_occasions,
+                     n_reps = n_reps,
+                     method_1 = sample_one_method[i])
 
     testthat::expect(effort$sample_occasions[nrow(effort)] <= n_pp,
                      paste("Last PP exceeds boundary for 1-method property", i))
