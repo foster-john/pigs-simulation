@@ -1,5 +1,5 @@
 default:
-  n_pp: 50
+  n_pp: 25
   start_density: 5
   out_dir: "out"
   analysis_dir: "analysis"
