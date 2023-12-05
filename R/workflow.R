@@ -96,7 +96,29 @@ n_county <- length(properties_per_county)
 order_property <- sample.int(n_properties)
 order_county <- rep(1:n_county, times = properties_per_county)
 
+## we need covariate data
+land_cover <- matrix(rnorm(n_county * 3), n_county, 3)
 
+## we need the effect of X on detection probability p
+beta_p <- rnorm(3)
 
+# method lookup table (data model parameters)
+method_lookup <- tibble(
+  idx = 1:5,
+  method = c("Firearms", "Fixed wing", "Helicopter", "Snares", "Traps"),
+  p_unique = c(runif(1), 0, 0, runif(2)),
+  rho = c(runif(1, 0.01, 5), # firearms; p_mu[1]
+          runif(1, 1, 30),   # fixed wing
+          runif(1, 1, 30),   # helicopter
+          runif(1, 0.01, 5),  # snare; gamma[1], p_mu[2]
+          runif(1, 0.01, 5)), # traps; gamma[2], p_mu[3]
+  gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
+)
 
+i <- 1
+property_data <- properties[[i]]
+X <- land_cover[order_county[i], ]
+phi_mu <- config$phi_mu
+psi_phi <- config$psi_phi
+start_density <- config$start_density
 
