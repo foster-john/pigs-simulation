@@ -241,8 +241,8 @@ Rmcmc <- buildMCMC(mcmcConf)
 Cmodel <- compileNimble(Rmodel)
 Cmcmc <- compileNimble(Rmcmc)
 
-n_iter <- 5
-n_chains <- 1
+n_iter <- 5000
+n_chains <- 3
 
 samples <- runMCMC(
   Cmcmc,
@@ -251,3 +251,5 @@ samples <- runMCMC(
   nburnin = n_iter / 2,
   samplesAsCodaMCMC = TRUE
 )
+
+
