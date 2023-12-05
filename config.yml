@@ -1,0 +1,8 @@
+default:
+  n_pp: 75
+  start_density: 0.1
+  out_dir: "out"
+  analysis_dir: "analysis"
+  model_dir: "modifiedDM_betaSurvival_dataJoint"
+  phi_mu: 0.78
+  psi_phi: 5
