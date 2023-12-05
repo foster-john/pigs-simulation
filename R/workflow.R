@@ -153,5 +153,101 @@ all_dynamics <- 1:n_properties |>
   ) |>
   list_rbind()
 
+N <- all_dynamics |>
+  select(PPNum, N, property, county, property_area) |>
+  distinct() |>
+  mutate(density = N / property_area)
+
+take <- all_dynamics |>
+  filter(!is.na(take))
 
 
+# -----------------------------------------------------------------
+# Fit MCMC ----
+# -----------------------------------------------------------------
+
+source("R/prep_nimble.R")
+nimble_data <- prep_nimble(N, take, land_cover)
+constants <- nimble_data$constants
+data <- nimble_data$data
+
+source("R/inits.R")
+inits_test <- inits(data, constants)
+
+custom_samplers <- tribble(
+  ~node,            ~type,
+  "log_mean_ls",    "slice",
+  "phi_mu",         "slice",
+  "psi_phi",        "slice",
+  "log_rho",        "AF_slice"
+)
+
+source("R/calc_log_potential_area.R")
+source("R/model_removal_dm.R")
+Rmodel <- nimbleModel(
+  code = modelCode,
+  constants = constants,
+  data = data,
+  inits = inits(data, constants),
+  calculate = TRUE
+)
+
+for(i in 1:constants$n_survey){
+  N_model <- Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]]
+  n <- N_model - data$y_sum[i]
+  if(n < 0){
+    Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]] <- N_model + n^2
+  }
+}
+
+Rmodel$initializeInfo()
+
+# default MCMC configuration
+mcmcConf <- configureMCMC(Rmodel, useConjugacy = TRUE)
+
+monitors_add <- c("xn", "p", "log_theta")
+params_check <- c(
+  "beta_p",
+  "beta1",
+  "log_gamma",
+  "log_rho",
+  "phi_mu",
+  "psi_phi",
+  "log_mean_ls",
+  "p_mu"
+)
+
+mcmcConf$addMonitors(monitors_add)
+
+if(!is.null(custom_samplers)){
+  for(i in seq_len(nrow(custom_samplers))){
+    node <- custom_samplers$node[i]
+    type <- custom_samplers$type[i]
+    mcmcConf$removeSampler(node)
+    mcmcConf$addSampler(node, type)
+  }
+}
+
+for(i in 1:5){
+  node <- paste0("beta_p[", i, ", ", 1:constants$m_p, "]")
+  node <- c(paste0("beta1[", i, "]"), node)
+  mcmcConf$removeSampler(node)
+  mcmcConf$addSampler(node, "AF_slice")
+}
+
+mcmcConf$printSamplers(byType = TRUE)
+
+Rmcmc <- buildMCMC(mcmcConf)
+Cmodel <- compileNimble(Rmodel)
+Cmcmc <- compileNimble(Rmcmc)
+
+n_iter <- 5
+n_chains <- 1
+
+samples <- runMCMC(
+  Cmcmc,
+  niter = n_iter,
+  nchains = n_chains,
+  nburnin = n_iter / 2,
+  samplesAsCodaMCMC = TRUE
+)
