@@ -36,7 +36,7 @@ generate_take_data <- function(m, effort_data){
 }
 
 conduct_removals <- function(N, removal_order, effort_data, log_survey_area, X, beta_p, pp,
-                             log_rho, log_gamma, p_unique){
+                             log_rho, log_gamma, p_unique, method_lookup){
 
   n_reps <- length(removal_order)
   log_theta <- C <- rep(NA, n_reps)
