@@ -76,7 +76,7 @@ simulate_dm <- function(
 
       # conduct removals
       take_t <- conduct_removals(N[t], removal_order, effort_data, log_survey_area, X, beta_p, pp,
-                                 log_rho, log_gamma, p_unique)
+                                 log_rho, log_gamma, p_unique, method_lookup)
       take <- bind_rows(take, take_t)
 
       # how many pigs are left?
@@ -106,7 +106,8 @@ simulate_dm <- function(
     ungroup() |>
     mutate(property = property_num,
            county = county_num,
-           property_area = survey_area) |>
+           property_area = survey_area,
+           obs_flag = if_else(is.na(take), 0, 1)) |>
     suppressMessages()
 
   return(all_info)
