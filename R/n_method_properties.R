@@ -19,7 +19,10 @@ n_method_properties <- function(df, n_properties, n, n_pp){
 
   # function to get property IDs given number of methods used ----
   get_properties <- function(n_method){
-    n_method_lookup |>
+    df |>
+      select(property, method) |>
+      distinct() |>
+      count(property) |>
       filter(n == n_method) |>
       pull(property)
   }
