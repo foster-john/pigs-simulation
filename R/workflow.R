@@ -20,8 +20,22 @@
 library(tidyverse)
 library(nimble)
 library(config)
+library(coda)
 
 config <- get(config = "default")
+
+out_dir <- config$out_dir
+model_dir <- config$model_dir
+
+past_reps <- list.files(file.path(out_dir, model_dir)) |> as.numeric()
+if(length(past_reps) == 0){
+  task_id <- 1
+} else {
+  task_id <- max(past_reps) + 1
+}
+
+dest <- file.path(out_dir, model_dir, task_id)
+if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 # -----------------------------------------------------------------
 # Load MIS data ----
@@ -70,15 +84,15 @@ method_4 <- n_method_properties(df, n_rel$n_simulate[4], 4, n_pp)
 method_5 <- n_method_properties(df, n_rel$n_simulate[5], 5, n_pp)
 
 properties <- c(
-  method_1,
-  method_2,
+  # method_1,
+  # method_2,
   method_3,
   method_4,
   method_5
 )
 
 n_properties <- length(properties)
-assertthat::are_equal(n_properties, sum(n_rel$n_simulate))
+#assertthat::are_equal(n_properties, sum(n_rel$n_simulate))
 
 # -----------------------------------------------------------------
 # Simulate eco/take dynamics ----
@@ -156,7 +170,8 @@ all_dynamics <- 1:n_properties |>
 N <- all_dynamics |>
   select(PPNum, N, property, county, property_area) |>
   distinct() |>
-  mutate(density = N / property_area)
+  mutate(density = N / property_area,
+         n_id = 1:n())
 
 take <- all_dynamics |>
   filter(!is.na(take))
@@ -182,30 +197,28 @@ custom_samplers <- tribble(
   "log_rho",        "AF_slice"
 )
 
-source("R/calc_log_potential_area.R")
 source("R/model_removal_dm.R")
-Rmodel <- nimbleModel(
-  code = modelCode,
-  constants = constants,
-  data = data,
-  inits = inits(data, constants),
-  calculate = TRUE
-)
-
-for(i in 1:constants$n_survey){
-  N_model <- Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]]
-  n <- N_model - data$y_sum[i]
-  if(n < 0){
-    Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]] <- N_model + n^2
-  }
-}
-
-Rmodel$initializeInfo()
-
-# default MCMC configuration
-mcmcConf <- configureMCMC(Rmodel, useConjugacy = TRUE)
 
 monitors_add <- c("xn", "p", "log_theta")
+
+n_iter <- config$n_iter
+n_chains <- config$n_chains
+
+source("R/fit_mcmc.R")
+samples <- fit_mcmc(
+  modelCode,
+  data,
+  constants,
+  n_iter,
+  n_chains,
+  custom_samplers,
+  monitors_add
+)
+
+# -----------------------------------------------------------------
+# Check MCMC ----
+# -----------------------------------------------------------------
+
 params_check <- c(
   "beta_p",
   "beta1",
@@ -217,39 +230,39 @@ params_check <- c(
   "p_mu"
 )
 
-mcmcConf$addMonitors(monitors_add)
+source("R/check_mcmc.R")
+n_mcmc <- config$n_mcmc
+check <- check_mcmc(samples, params_check, n_mcmc, dest)
 
-if(!is.null(custom_samplers)){
-  for(i in seq_len(nrow(custom_samplers))){
-    node <- custom_samplers$node[i]
-    type <- custom_samplers$type[i]
-    mcmcConf$removeSampler(node)
-    mcmcConf$addSampler(node, type)
-  }
-}
+samples_draw <- check$posterior_samples
 
-for(i in 1:5){
-  node <- paste0("beta_p[", i, ", ", 1:constants$m_p, "]")
-  node <- c(paste0("beta1[", i, "]"), node)
-  mcmcConf$removeSampler(node)
-  mcmcConf$addSampler(node, "AF_slice")
-}
+source("R/functions_predict.R")
+post <- data_posteriors(samples_draw, constants, data)
 
-mcmcConf$printSamplers(byType = TRUE)
+# -----------------------------------------------------------------
+# Write to disk ----
+# -----------------------------------------------------------------
 
-Rmcmc <- buildMCMC(mcmcConf)
-Cmodel <- compileNimble(Rmodel)
-Cmcmc <- compileNimble(Rmcmc)
-
-n_iter <- 5000
-n_chains <- 3
-
-samples <- runMCMC(
-  Cmcmc,
-  niter = n_iter,
-  nchains = n_chains,
-  nburnin = n_iter / 2,
-  samplesAsCodaMCMC = TRUE
+out_list <- list(
+  posterior_samples = as_tibble(samples_draw),
+  posterior_take = post$y,
+  posterior_p = post$p,
+  posterior_potential_area = post$potential_area,
+  take = take,
+  N = N,
+  method_lookup = method_lookup,
+  beta_p = beta_p,
+  constants = constants,
+  start_density = start_density,
+  data = data,
+  psrf = check$psrf,
+  effective_samples = check$effective_samples,
+  burnin = check$burnin,
+  converged = check$converged,
+  bad_mcmc = check$bad_mcmc
 )
 
-
+write_rds(
+  out_list,
+  file.path(dest, "simulation_data.rds")
+)
