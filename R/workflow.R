@@ -19,10 +19,9 @@
 
 library(tidyverse)
 library(nimble)
-library(config)
 library(coda)
 
-config <- get(config = "default")
+config <- config::get(config = "default")
 
 out_dir <- config$out_dir
 model_dir <- config$model_dir

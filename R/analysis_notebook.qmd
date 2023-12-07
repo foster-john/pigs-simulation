@@ -1,0 +1,576 @@
+---
+title: "Simulation Analysis"
+author: "John Foster"
+format: html
+editor: visual
+execute: 
+  echo: false
+  warning: false
+  message: false
+article: 
+  column: page
+---
+
+# simulation set-up
+
+```{r setup}
+library(targets)
+library(tidyverse)
+library(lubridate)
+library(spdep)
+library(readxl)
+library(spatialreg)
+library(parallel)
+library(nimble)
+library(rgdal)
+library(coda)
+library(mgcv)
+
+config <- config::get(config = "default")
+model_dir <- config$model_dir
+analysis_dir <- "../analysis"
+param_residuals_file <- "parameterResidual.rds"
+param_recovery_file <- "parameterRecovery.rds"
+abundance_file <- "abundance.rds"
+take_file <- "take.rds"
+
+sim_results <- file.path(analysis_dir, model_dir)
+
+param_recovery <- read_rds(file.path(sim_results, param_recovery_file))
+param_residual <- read_rds(file.path(sim_results, param_residuals_file))
+
+n_experiments <- length(unique(param_recovery[[1]]$simulation))
+
+```
+
+Total number of simulations run: `r n_experiments`
+
+## Litter size
+
+The reproduction part of the process model has been reparameterized to assume that females have one litter per year. This way we only have to estimate one parameter, which is the number of piglets per litter. The prior for litter size is
+
+$$ls \sim exp(N(0, 2))$$
+
+```{r Reproduction parameters}
+#| label: fig-reproSummary
+#| fig-cap: "95% CI of the resdiuals for litter size across all simulations"
+
+
+plot_multiple_residuals <- function(dat, y){
+  dat |> 
+    ggplot() +
+    aes(x = .data[["med"]], 
+        xmin = .data[["low"]], 
+        xmax = .data[["high"]], 
+        y = .data[[y]]) +
+    geom_linerange(linewidth = 2, position = position_dodge(1)) +
+    geom_point(size = 4.5, position = position_dodge(1)) +
+    geom_vline(aes(xintercept = 0), linetype = "dashed")
+}
+
+df <- param_residual$litter_size
+
+df |> 
+  mutate(Parameter = "Mean litter size") |> 
+  plot_multiple_residuals("Parameter") +
+  labs(x = "Residuals in mean litter size",
+       y = "",
+       title = "Mean litter size",
+       color = element_blank()) +
+  theme_bw()
+```
+
+```{r Reproduction parameters}
+#| label: fig-reproRecovered
+#| fig-cap: "95% CI posteriors for litter size across all simulations, color represents if the parameter was recovered in the simulation"
+df <- param_recovery$litter_size
+
+percent_recovered <- function(dat){
+  sum(dat$parameter_recovered) / nrow(dat) * 100
+}
+
+ls_recovered <- percent_recovered(df)
+
+plot_recovery <- function(dat){
+  dat |> 
+    mutate(pr = if_else(parameter_recovered == 1, "Recovered", "Missed")) |> 
+    ggplot() +
+    aes(x = .data[["simulation"]], 
+        y = .data[["med"]], 
+        ymin = .data[["low"]], 
+        ymax = .data[["high"]], 
+        color = .data[["pr"]]) +
+    geom_linerange() +
+    geom_point() +
+    geom_point(aes(y = actual), color = "black", shape = 4, size = 5)
+}
+
+df |> 
+  mutate(pr = if_else(parameter_recovered == 1, "Recovered", "Missed")) |> 
+  plot_recovery() +
+  labs(color = "Parameter Recovered",
+       x = "Simulation",
+       y = "Posterior Estimate") +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+```
+
+Percent of simulations that recovered litter size: `r ls_recovered`
+
+Across simulations litter size was accurately estimated.
+
+## Survival
+
+```{r survival}
+#| label: fig-phiSummary
+#| layout-ncol: 2
+#| fig-cap: "Survival"
+#| fig-subcap: 
+#|   - "Global survival"
+#|   - "Shrinkage"
+
+df <- param_residual$phi_mu
+df |> 
+  mutate(start_density = as.factor(start_density)) |> 
+  plot_multiple_residuals("start_density") +
+  labs(x = "Residuals in survival model",
+       y = "Starting density",
+       title = "Survival model: mean",
+       color = element_blank()) +
+  theme_bw()
+
+df <- param_residual$psi_phi
+df |> 
+  mutate(start_density = as.factor(start_density)) |> 
+  plot_multiple_residuals("start_density") +
+  labs(x = "Residuals in survival model",
+       y = "Starting density",
+       title = "Survival model: shrinkage",
+       color = element_blank()) +
+  theme_bw()
+```
+
+```{r}
+#| label: fig-phiRecovered
+#| layout-ncol: 2
+#| fig-cap: "Survival by simulation"
+#| fig-subcap: 
+#|   - "Global survival"
+#|   - "Shrinkage"
+
+df <- param_recovery$phi_mu |> 
+  mutate(pr = if_else(parameter_recovered == 1, "Recovered", "Missed"))
+
+phi_recovered <- df |> 
+  summarise(percent_recovered = sum(parameter_recovered) / n_experiments * 100)
+
+bad_phi <- df |> 
+  filter(parameter_recovered == 0)
+
+df |> 
+  plot_recovery() +
+  labs(color = "Parameter Recovered",
+       x = "Simulation",
+       y = "Posterior Estimate",
+       title = "Survival") +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+df <- param_recovery$psi_phi |> 
+  mutate(pr = if_else(parameter_recovered == 1, "Recovered", "Missed"))
+
+df |> 
+  plot_recovery() +
+  labs(color = "Parameter Recovered",
+       x = "Simulation",
+       y = "Posterior Estimate",
+       title = "Shrinkage") +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+```
+
+Percent of simulations recovering survival parameters:
+
+```{r}
+knitr::kable(phi_recovered)
+```
+
+Global survival and property/timestep survival are on the same scale to show that most individual survival estimates are within the global survival posterior range.
+
+## Data model
+
+The saturation constant $\gamma$ for traps and snares comes from the data model were we estimated the area searched:
+
+$$
+area=\frac{\rho_me}{\gamma_m+e}
+$$
+
+where $e$ is effort per trap and $\rho$ is the search area by a unit of removal of method $m$.
+
+# Gamma
+
+```{r}
+#| label: fig-gamma
+
+plot_p <- function(m){
+  df |> 
+  filter(method %in% m) |> 
+  ggplot(aes(x = reorder(simulation, actual, mean), y = actual, color = "Actual")) +
+  geom_point(aes(y = med, color = "Posterior")) +
+  geom_linerange(aes(ymin = low, ymax = high, color = "Posterior")) +
+  geom_point(size = 1) +
+  facet_grid(start_density ~ method, scales = "free") +
+  labs(x = "Simulation",
+       y = "Posterior",
+       # title = "Fixed wing (all simulations): unique area with additional units",
+       color = element_blank()) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        legend.position = "bottom")
+}
+
+method_lookup <- tibble(
+  method = c("Firearms", "Fixed wing", "Helicopter", "Snares", "Traps"),
+  idx = 1:5
+)
+
+df <- param_residual$gamma |> 
+  mutate(method = c("Snare", "Traps"))
+
+df |> 
+  plot_multiple_residuals("method") +
+  labs(x = "Residual error (posterior - truth)",
+       y = "Method",
+       title = "Saturation constant (gamma)",
+       color = element_blank()) +
+  facet_wrap(~ start_density) +
+  theme_bw()
+
+df <- param_recovery$gamma
+
+gamma_recovered <- df |> 
+  group_by(method) |> 
+  summarise(percent_recovered = sum(parameter_recovered) / n_experiments * 100)
+
+bad_gamma <- df |> 
+  filter(parameter_recovered == 0)
+
+df |> 
+  # filter(parameter_recovered == 0) |> 
+  plot_recovery() +
+  facet_grid(start_density ~ method, scales = "free") +
+  labs(x = "Simulation",
+       y = "Posterior",
+       title = "Not recovered: saturation constant (gamma)",
+       color = element_blank()) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+# plot_p("Snares") + coord_cartesian(ylim = c(0, 17))
+# plot_p("Traps") + coord_cartesian(ylim = c(0, 5))
+
+```
+
+Percent of simulations recovering saturation constant (gamma):
+
+```{r}
+knitr::kable(gamma_recovered)
+```
+
+The area searched for firearms, fixed wing aircraft, and helicopters is:
+
+$$
+area=\rho_me
+$$
+
+meaning the area searched scales linearly with effort per unit deployed.
+
+```{r}
+#| label: fig-rho
+
+df <- param_residual$rho |> 
+  left_join(method_lookup)
+
+df |> 
+  plot_multiple_residuals("method") +
+  labs(x = "Residual error (posterior - truth)",
+       y = "Method",
+       title = "Search area (rho)",
+       color = element_blank()) +
+  # coord_flip() +
+  theme_bw()
+
+df <- param_recovery$rho |> 
+  left_join(method_lookup)
+
+rho_recovered <- df |> 
+  group_by(method) |> 
+  summarise(percent_recovered = sum(parameter_recovered) / n_experiments * 100)
+
+bad_rho <- df |> 
+  filter(parameter_recovered == 0)
+
+df |> 
+  # filter(parameter_recovered == 0) |> 
+  plot_recovery() +
+  facet_wrap(~ method, scales = "free") +
+  labs(x = "Simulation",
+       y = "Posterior",
+       title = "Not recovered: search area (rho)",
+       color = element_blank()) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+# plot_p("Firearms")
+# plot_p("Fixed wing")
+# plot_p("Helicopter")
+# plot_p("Snares")
+# plot_p("Traps")
+
+```
+
+Percent of simulations recovering search area (rho):
+
+```{r}
+knitr::kable(rho_recovered)
+```
+
+When more than one unit of a removal method is deployed, we need to estimated the degree of overlap of search area that could occur:
+
+$$A = area(1 +(n-1)\zeta_m))$$
+
+Where $n$ is the number of units deployed and $\zeta$ is the degree of overlap. When $\zeta$ = 0, no unique area searched by additional units. When $zeta$ = 1, all area searched by additional units is unique.
+
+```{r overlap}
+#| label: fig-p
+
+df <- param_residual$p_mu |> 
+  left_join(method_lookup)
+
+df |> 
+  plot_multiple_residuals("method") +
+  labs(x = "Residual error (posterior - truth)",
+       y = "Method",
+       title = "Unique area with additional units",
+       color = element_blank()) +
+  # coord_flip() +
+  theme_bw()
+
+df <- param_recovery$p_mu |> 
+  left_join(method_lookup)
+
+p_recovered <- df |> 
+  group_by(method) |> 
+  summarise(percent_recovered = sum(parameter_recovered) / n_experiments * 100)
+
+bad_p <- df |> 
+  filter(parameter_recovered == 0)
+
+df |> 
+  # filter(parameter_recovered == 0) |> 
+  arrange(actual) |> 
+  plot_recovery() +
+  facet_wrap(~ method, scales = "free") +
+  labs(x = "Simulation",
+       y = "Posterior",
+       title = "Not recovered: unique area with additional units",
+       color = element_blank()) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+# plot_p("Firearms")
+# plot_p("Snares")
+# plot_p("Traps")
+
+
+
+```
+
+Percent of simulations recovering unique area (zeta):
+
+```{r}
+knitr::kable(p_recovered)
+```
+
+Across simulations, the $\zeta$ values were accurately estimated, however with helicopters and fixed wing aircraft these posteriors do not deviate from the prior, which is most likely a sample size issue.
+
+The probability of capture is given by
+
+$$logit(\theta)=X\beta$$
+
+where $X$ is a matrix of land cover covariates and $\beta$ a vector of coefficients.
+
+```{r beta}
+#| label: fig-beta
+
+w <- 0.7
+mH <- method_lookup |> 
+  rename(method_idx = idx)
+
+beta1 <- param_residual$beta1
+beta_p <- param_residual$beta_p
+
+beta <- bind_rows(beta1, beta_p) |> 
+  left_join(mH)
+
+beta |> 
+  plot_multiple_residuals("position") +
+  facet_wrap(~ method, scales = "free") +
+  coord_flip() +
+  labs(title = "Data model coefficients",
+       x = "Position (1 = intercept)",
+       y = "Residual error (posterior - truth)") +
+  theme_bw()
+
+
+beta1 <- param_recovery$beta1
+beta_p <- param_recovery$beta_p
+
+beta <- bind_rows(beta1, beta_p) |> 
+  left_join(mH)
+
+beta_recovered <- beta |> 
+  group_by(method, position) |> 
+  summarise(percent_recovered = sum(parameter_recovered) / n_experiments * 100)
+
+bad_beta <- beta |> 
+  filter(parameter_recovered == 0)
+
+bad_beta |> 
+  plot_recovery() +
+  facet_grid(position ~ method, scales = "free") +
+  labs(x = "Simulation",
+       y = "Posterior",
+       title = "Not recovered: capture probability parameters",
+       color = element_blank()) +
+  theme_bw() +
+  theme(axis.text.x = element_blank())
+
+```
+
+Percent of simulations recovering capture probability parameters+:
+
+```{r}
+knitr::kable(beta_recovered)
+```
+
+Across simulations, the $\beta$ values were accurately estimated.
+
+## Abundance estimates and errors
+
+```{r N}
+#| label: fig-pred_obs
+
+abundance <- read_rds(file.path(sim_results, abundance_file))
+df <- abundance$abundance_summaries
+
+xx = summary(lm(med_abundance ~ abundance, data = df))
+
+
+df |> 
+  mutate(obs = if_else(obs_flag == 1, "Yes", "No")) |> 
+  ggplot() +
+  aes(y = med_abundance, x = abundance, color = obs) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = "Abundance",
+       color = "Removals occured",
+       # subtitle = paste("Slope =", round(xx$coefficients[2],2), "\nR^2 =", round(xx$r.squared, 2)),
+       y = "Posterior median abundance",
+       x = "True abundance") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10))
+
+take <- read_rds(file.path(sim_results, take_file))
+df <- take$take_summaries
+
+xx = summary(lm(med ~ take, data = df))
+
+df |> 
+  ggplot() +
+  aes(y = med, x = take) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = "Predicted take",
+       # subtitle = paste("Slope =", round(xx$coefficients[2],2), "\nR^2 =", round(xx$r.squared, 2)),
+       y = "Posterior median take",
+       x = "True take") +
+  facet_wrap(~ method, scales = "free") +
+  theme_bw() +
+  theme(strip.text = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 10))
+
+```
+
+In terms of accuracy (posterior median), we tend to under predict as abundance and density increases.
+
+```{r}
+#| label: fig-error
+#| layout-ncol: 2
+#| layout-nrow: 2
+#| fig-cap: "How error scales with abundance"
+#| fig-subcap: 
+#|   - "Mean absolute error"
+#|   - "Absolute mean percentage error"
+#|   - "Root mean sqaured error"
+#|   - "Bias"
+
+xn_error <- abundance$abundance_metrics
+
+error_plots <- function(df, xcol, ycol){
+  df |> 
+    ggplot() +
+    aes(x = .data[[xcol]], y = .data[[ycol]]) +
+    geom_point(size = 0.5) +
+    theme_bw()
+}
+
+xn_error |> 
+  error_plots("abundance", "mae_abundance") +
+  geom_smooth() +
+  labs(#subtitle = paste("Slope =", round(xx$coefficients[2], 2)),
+       y = "Mean absolute error (pig abundance)",
+       x = "True abundance")
+
+xn_error |> 
+  error_plots("abundance", "mpe_abundance") +
+   geom_smooth() +
+  labs(#title = "MPE abundance",
+       y = "Mean percentage error",
+       x = "True abundance")
+
+xn_error |> 
+  error_plots("abundance", "rmse_abundance") +
+   geom_smooth() +
+  labs(#title = "RMSE abundance",
+       y = "RMSE",
+       x = "True abundance")
+
+xn_error |> 
+  error_plots("abundance", "mbias_abundance") +
+   geom_smooth() +
+  geom_abline(intercept = 0, slope = 0, linetype = "dashed") +
+  labs(#title = "Mean bias abundance",
+       y = "Bias",
+       x = "True abundance")
+
+xn_error |> 
+  error_plots("property_area", "rmse_abundance") +
+   geom_smooth() +
+  geom_abline(intercept = 0, slope = 0, linetype = "dashed") +
+  labs(#title = "Mean bias abundance",
+       x = "Property area (km^2)",
+       y = "RMSE")
+
+
+
+```
+
+Not surprisingly, accuracy (mean absolute error) decreases as abundance increases, which is due to posteriors being biased low.
