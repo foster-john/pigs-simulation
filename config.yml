@@ -7,3 +7,5 @@ default:
   phi_mu: 0.78
   psi_phi: 5
   n_mcmc: 500
+  n_iter: 30000
+  n_chains: 3
