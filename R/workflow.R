@@ -25,16 +25,17 @@ config <- config::get(config = "default")
 
 out_dir <- config$out_dir
 model_dir <- config$model_dir
-
+start_density <- config$start_density
+density_dir <- paste0("density_", start_density)
 past_reps <- list.files(file.path(out_dir, model_dir)) |> as.numeric()
+
 if(length(past_reps) == 0){
   task_id <- 1
 } else {
   task_id <- max(past_reps) + 1
 }
 
-
-dest <- file.path(out_dir, model_dir, task_id)
+dest <- file.path(out_dir, model_dir, density_dir, task_id)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 # -----------------------------------------------------------------
@@ -136,21 +137,8 @@ method_lookup <- tibble(
 
 phi_mu <- config$phi_mu
 psi_phi <- config$psi_phi
-start_density <- config$start_density
+
 source("R/eco_dynamics.R")
-
-# x <- 1
-# simulate_dm(
-#   properties[[x]],
-#   order_county[x],
-#   phi_mu,
-#   psi_phi,
-#   land_cover[order_county[x], ],
-#   beta_p,
-#   start_density,
-#   method_lookup
-# )
-
 all_dynamics <- 1:n_properties |>
   map(
     \(x) simulate_dm(
