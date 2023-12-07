@@ -22,8 +22,6 @@ simulate_dm <- function(
 
   data_litter_size <- round(data_litter_size)
 
-  zeta <- mean(data_litter_size)*28*1/365 # mean pigs produced per female per 28 days
-
   # ecological process
   process_model <- function(N, zeta, a_phi, b_phi){
     phi <- rbeta(1, a_phi, b_phi)
@@ -32,6 +30,9 @@ simulate_dm <- function(
   }
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
+
+  # mean pigs produced per 28 days assuming 1 litter per year
+  zeta <- mean(data_litter_size)*28*1/365
 
   survey_area <- property_data$area
   log_survey_area <- log(survey_area)
