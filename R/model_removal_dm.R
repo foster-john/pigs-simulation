@@ -81,7 +81,7 @@ modelCode <- nimbleCode({
     # population growth across time steps
     for(j in 2:n_time_prop[i]){ # loop through every PP, including missing ones
 
-      Z[i, j-1] <- N[i, all_pp[i, j-1]] - rem[i, j-1]
+      Z[i, j-1] <- N[i, all_pp[i, j-1]] #- rem[i, j-1]
 
       lambda[i, j-1] <- Z[i, j-1] * zeta / 2 + Z[i, j-1] * phi[i, j-1]
 
