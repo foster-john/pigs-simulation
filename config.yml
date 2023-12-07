@@ -9,3 +9,22 @@ default:
   n_mcmc: 500
   n_iter: 30000
   n_chains: 3
+
+hpc_test:
+  n_pp: 30
+  start_density: 5
+  top_dir: "/lustrefs/ceah/feral-swine/simulation"
+  out_dir: "output"
+  analysis_dir: "analysis"
+  model_dir: "modifiedDM_betaSurvival_dataJoint"
+  phi_mu: 0.78
+  psi_phi: 5
+  n_mcmc: 500
+  n_iter: 30000
+  n_chains: 3
+
+hpc_production:
+  inherits: hpc_test
+  n_pp: 75
+  n_mcmc: 1000
+  n_iter: 100000
