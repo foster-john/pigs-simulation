@@ -51,7 +51,7 @@ prep_nimble <- function(N, take, X){
 
   y_sum <- take |>
     group_by(property, PPNum) |>
-    mutate(ysum = cumsum(take)) |>
+    mutate(ysum = cumsum(take) - take) |>
     ungroup() |>
     select(property, PPNum, ysum, order)
 
