@@ -41,7 +41,8 @@ simulate_dm <- function(
   p_unique <- method_lookup$p_unique
 
   source("R/functions_removal.R")
-  effort_data <- read_csv("../pigs-statistical/data/insitu/effort_data.csv") |>
+  data_dir <- config::get("data_dir")
+  effort_data <- read_csv(file.path(data_dir, "insitu/effort_data.csv")) |>
     suppressMessages()
 
   removal_effort <- property_data$effort

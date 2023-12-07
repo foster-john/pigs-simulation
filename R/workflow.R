@@ -33,14 +33,15 @@ if(length(past_reps) == 0){
   task_id <- max(past_reps) + 1
 }
 
+
 dest <- file.path(out_dir, model_dir, task_id)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 # -----------------------------------------------------------------
 # Load MIS data ----
 # -----------------------------------------------------------------
-
-df <- read_rds("../pigs-statistical/data/insitu/MIS_4weekPP.rds")
+data_dir <- config$data_dir
+df <- read_rds(file.path(data_dir, "insitu/MIS_4weekPP.rds"))
 df <- df |>
   select(-method) |>
   rename(property = agrp_prp_id,
