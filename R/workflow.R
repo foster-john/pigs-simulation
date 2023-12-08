@@ -68,7 +68,7 @@ n_prop <- sum(n_rel$n_simulate)    # total number of properties to simulate
 # -----------------------------------------------------------------
 # 1-method properties ----
 # -----------------------------------------------------------------
-
+message("Create 1-method properties")
 source("R/one_method_properties.R")
 method_1 <- one_method_properties(df, n_rel$n_simulate[1], n_pp)
 
@@ -78,10 +78,13 @@ method_1 <- one_method_properties(df, n_rel$n_simulate[1], n_pp)
 
 source("R/n_method_properties.R")
 
-## use map here?
+message("Create 2-method properties")
 method_2 <- n_method_properties(df, n_rel$n_simulate[2], 2, n_pp)
+message("Create 3-method properties")
 method_3 <- n_method_properties(df, n_rel$n_simulate[3], 3, n_pp)
+message("Create 4-method properties")
 method_4 <- n_method_properties(df, n_rel$n_simulate[4], 4, n_pp)
+message("Create 5-method properties")
 method_5 <- n_method_properties(df, n_rel$n_simulate[5], 5, n_pp)
 
 properties <- c(
@@ -138,6 +141,7 @@ method_lookup <- tibble(
 phi_mu <- config$phi_mu
 psi_phi <- config$psi_phi
 
+message("Simulate swine dynamics")
 source("R/eco_dynamics.R")
 all_dynamics <- 1:n_properties |>
   map(
@@ -164,11 +168,22 @@ N <- all_dynamics |>
 take <- all_dynamics |>
   filter(!is.na(take))
 
+known_values <- list(
+  N = N,
+  take = take,
+  phi_mu = phi_mu,
+  psi_phi = psi_phi,
+  method_lookup = method_lookup,
+  beta_p = beta_p,
+  land_cover = land_cover
+)
+
+write_rds(known_values, file.path(dest, "knownValues.rds"))
 
 # -----------------------------------------------------------------
 # Fit MCMC ----
 # -----------------------------------------------------------------
-
+message("Fit MCMC")
 source("R/prep_nimble.R")
 nimble_data <- prep_nimble(N, take, land_cover)
 constants <- nimble_data$constants
@@ -206,7 +221,7 @@ samples <- fit_mcmc(
 # -----------------------------------------------------------------
 # Check MCMC ----
 # -----------------------------------------------------------------
-
+message("Check MCMC")
 params_check <- c(
   "beta_p",
   "beta1",
@@ -214,7 +229,7 @@ params_check <- c(
   "log_rho",
   "phi_mu",
   "psi_phi",
-  "log_mean_ls",
+  "log_nu",
   "p_mu"
 )
 
@@ -224,8 +239,7 @@ check <- check_mcmc(samples, params_check, n_mcmc, dest)
 
 samples_draw <- check$posterior_samples
 
-source("R/functions_predict.R")
-post <- data_posteriors(samples_draw, constants, data)
+bad_mcmc <- check$bad_mcmc
 
 # -----------------------------------------------------------------
 # Write to disk ----
