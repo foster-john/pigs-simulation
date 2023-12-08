@@ -415,4 +415,3 @@ take_list <- list(
 write_rds(take_list, file.path(path, "take.rds"))
 message("posterior take done")
 
-
