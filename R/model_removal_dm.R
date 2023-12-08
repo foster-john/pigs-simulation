@@ -28,14 +28,13 @@ modelCode <- nimbleCode({
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
 
-  log_mean_ls ~ dnorm(2, tau = 1)  # mean litter size
-  log(mean_ls) <- log_mean_ls
+  log_nu ~ dnorm(2, tau = 1)  # mean litter size
+  log(nu) <- log_nu
 
   ## convert to expected number of pigs per primary period
-  log_zeta_mu <- log(pp_len) + log_mean_ls - log(365)
-  log(zeta) <- log_zeta_mu
+  zeta <- nu * pp_len / 365
   for(i in 1:n_ls){
-    J[i] ~ dpois(mean_ls)
+    J[i] ~ dpois(nu)
   }
 
   for(i in 1:n_survey){
