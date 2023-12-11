@@ -6,7 +6,8 @@
 #
 # --------------------------------------------------------------------
 
-library(tidyverse)
+library(dplyr)
+library(tidyr)
 library(nimble)
 library(coda)
 
