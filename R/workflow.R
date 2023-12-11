@@ -17,9 +17,12 @@
 #
 # --------------------------------------------------------------------
 
-library(tidyverse)
 library(nimble)
 library(coda)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(purrr)
 
 config <- config::get(config = "default")
 
@@ -194,7 +197,7 @@ inits_test <- inits(data, constants)
 
 custom_samplers <- tribble(
   ~node,            ~type,
-  "log_mean_ls",    "slice",
+  "log_nu",         "slice",
   "phi_mu",         "slice",
   "psi_phi",        "slice",
   "log_rho",        "AF_slice"

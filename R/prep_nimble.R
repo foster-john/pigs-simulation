@@ -1,6 +1,9 @@
 
 prep_nimble <- function(N, take, X){
 
+  require(dplyr)
+  require(tidyr)
+
   N_timestep <- N |>
     select(property, PPNum) |>
     group_by(property) |>
