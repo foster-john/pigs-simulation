@@ -9,8 +9,12 @@ simulate_dm <- function(
     X,
     beta_p,
     start_density,
-    method_lookup
+    method_lookup,
+    effort_csv
 ){
+
+  require(dplyr)
+  require(tidyr)
 
   # mean litters per year from VerCauteren et al. 2019 pg 64
   data_litters_per_year <- c(1, 2, 0.86, 1, 2.28, 2.9, 0.49, 0.85, 1.57)
@@ -41,8 +45,7 @@ simulate_dm <- function(
   p_unique <- method_lookup$p_unique
 
   source("R/functions_removal.R")
-  data_dir <- config::get("data_dir")
-  effort_data <- read_csv(file.path(data_dir, "insitu/effort_data.csv")) |>
+  effort_data <- readr::read_csv(effort_csv) |>
     suppressMessages()
 
   removal_effort <- property_data$effort
