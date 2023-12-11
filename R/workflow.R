@@ -24,21 +24,24 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 
-config <- config::get(config = "default")
-
+config_name <- "hpc_test"
+config <- config::get(config = config_name)
+top_dir <- config$top_dir
 out_dir <- config$out_dir
+dev_dir <- config$dev_dir
 model_dir <- config$model_dir
+project_dir <- config$project_dir
 start_density <- config$start_density
 density_dir <- paste0("density_", start_density)
-past_reps <- list.files(file.path(out_dir, model_dir)) |> as.numeric()
 
-if(length(past_reps) == 0){
-  task_id <- 1
-} else {
-  task_id <- max(past_reps) + 1
-}
 
-dest <- file.path(out_dir, model_dir, density_dir, task_id)
+base::stop("Dev stop")
+
+dest <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
+
+message("Simulations will be written to\n   ", dest)
+
+
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 # -----------------------------------------------------------------
