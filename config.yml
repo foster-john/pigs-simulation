@@ -1,15 +1,17 @@
 default:
-  n_pp: 30
   start_density: 5
+  phi_mu: 0.78
+  psi_phi: 5
+  n_chains: 3
+
+dev:
   data_dir: "C://Users/John.Foster/OneDrive - USDA/Desktop/fosteR/pigs-statistical/data"
   out_dir: "out"
   analysis_dir: "analysis"
   model_dir: "modifiedDM_betaSurvival_dataJoint"
-  phi_mu: 0.78
-  psi_phi: 5
+  n_pp: 30
   n_mcmc: 500
-  n_iter: 500
-  n_chains: 3
+  n_iter: 5000
 
 hpc_test:
   top_dir: "/lustrefs/ceah/feral-swine"
@@ -17,6 +19,9 @@ hpc_test:
   out_dir: "output"
   analysis_dir: "analysis"
   data_dir: "data"
+  n_pp: 30
+  n_mcmc: 500
+  n_iter: 5000
 
 hpc_production:
   inherits: hpc_test
