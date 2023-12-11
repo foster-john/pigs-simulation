@@ -36,7 +36,7 @@ prep_nimble <- function(N, take, X){
   take$start <- 0
   take$end <- 0
 
-  pb <- txtProgressBar(max = nrow(take), style = 3)
+  pb <- txtProgressBar(max = nrow(take), style = 1)
   for (i in 1:nrow(take)) {
     if (take$order[i] > 1) {
       idx <- which(take$county == take$county[i] &
