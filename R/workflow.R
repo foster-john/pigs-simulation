@@ -190,7 +190,6 @@ known_values <- list(
 
 write_rds(known_values, file.path(dest, "knownValues.rds"))
 
-base::stop("Dev stop")
 # -----------------------------------------------------------------
 # Fit MCMC ----
 # -----------------------------------------------------------------
@@ -218,6 +217,8 @@ monitors_add <- c("xn", "p", "log_theta")
 n_iter <- config$n_iter
 n_chains <- config$n_chains
 
+message("Fitting MCMC with ", n_iter, " iterations across ", n_chains, " chains")
+
 source("R/fit_mcmc.R")
 samples <- fit_mcmc(
   modelCode,
@@ -229,6 +230,7 @@ samples <- fit_mcmc(
   monitors_add
 )
 
+base::stop("Dev stop")
 # -----------------------------------------------------------------
 # Check MCMC ----
 # -----------------------------------------------------------------
