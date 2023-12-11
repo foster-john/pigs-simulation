@@ -34,21 +34,24 @@ project_dir <- config$project_dir
 start_density <- config$start_density
 density_dir <- paste0("density_", start_density)
 
-
-base::stop("Dev stop")
-
 dest <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
 
 message("Simulations will be written to\n   ", dest)
 
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- args[1]
 
+message("  Task ID: ", task_id)
+
+dest <- file.path(dest, task_id)
 if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
 # -----------------------------------------------------------------
 # Load MIS data ----
 # -----------------------------------------------------------------
+message(" MIS data intake")
 data_dir <- config$data_dir
-df <- read_rds(file.path(data_dir, "insitu/MIS_4weekPP.rds"))
+df <- read_rds(file.path(top_dir, data_dir, "insitu/MIS_4weekPP.rds"))
 df <- df |>
   select(-method) |>
   rename(property = agrp_prp_id,
@@ -94,15 +97,15 @@ message("Create 5-method properties")
 method_5 <- n_method_properties(df, n_rel$n_simulate[5], 5, n_pp)
 
 properties <- c(
-  # method_1,
-  # method_2,
+  method_1,
+  method_2,
   method_3,
   method_4,
   method_5
 )
 
 n_properties <- length(properties)
-#assertthat::are_equal(n_properties, sum(n_rel$n_simulate))
+assertthat::are_equal(n_properties, sum(n_rel$n_simulate))
 
 # -----------------------------------------------------------------
 # Simulate eco/take dynamics ----
@@ -160,7 +163,8 @@ all_dynamics <- 1:n_properties |>
       land_cover[order_county[x], ],
       beta_p,
       start_density,
-      method_lookup
+      method_lookup,
+      file.path(top_dir, data_dir, "insitu/effort_data.csv")
     )
   ) |>
   list_rbind()
@@ -186,6 +190,7 @@ known_values <- list(
 
 write_rds(known_values, file.path(dest, "knownValues.rds"))
 
+base::stop("Dev stop")
 # -----------------------------------------------------------------
 # Fit MCMC ----
 # -----------------------------------------------------------------
