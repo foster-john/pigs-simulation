@@ -50,7 +50,8 @@ inits <- function(data, constants, dir = NULL){
           method = method[idx]
         )
 
-        log_theta[j] <- log(ilogit(beta1[method[idx]] + inprod(X_p[county[idx], ], beta_p[method[idx],]))) +
+        log_theta[j] <- log(ilogit(beta1[method[idx]] +
+                                     nimble::inprod(X_p[county[idx], ], beta_p[method[idx],]))) +
           min(0, log_potential_area - log_survey_area_km2[idx])
 
         if(j == 1){
@@ -93,7 +94,7 @@ inits <- function(data, constants, dir = NULL){
       phi_mu = phi_mu,
       psi_phi = psi_phi,
       N = N + buffer,
-      log_mean_ls = log(mean_ls),
+      log_nu = log(mean_ls),
       log_gamma = log_gamma,
       log_rho = log_rho
     )
