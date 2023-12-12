@@ -63,7 +63,7 @@ simulate_dm <- function(
     N_spin <- process_model(N_spin, zeta, a_phi, b_phi)
   }
 
-  # if(N_spin == 0) # TODO write exit from property
+  # if(N_spin == 0) stop("Property extinct after spin-up")
 
   N <- numeric(n_time)
   N[1] <- N_spin
