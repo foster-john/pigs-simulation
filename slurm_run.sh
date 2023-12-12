@@ -7,5 +7,6 @@
 #SBATCH --output=test_sim%J.txt   # output file 
 #SBATCH --array=1-30              # number of arrays
 
+
 module load R
 Rscript R/workflow.R $SLURM_ARRAY_TASK_ID 
