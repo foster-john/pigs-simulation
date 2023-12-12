@@ -146,6 +146,8 @@ method_lookup <- tibble(
   gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
 )
 
+message("Data model parameters")
+method_lookup
 
 phi_mu <- config$phi_mu
 psi_phi <- config$psi_phi
@@ -230,7 +232,6 @@ samples <- fit_mcmc(
   monitors_add
 )
 
-base::stop("Dev stop")
 # -----------------------------------------------------------------
 # Check MCMC ----
 # -----------------------------------------------------------------
@@ -246,6 +247,10 @@ params_check <- c(
   "p_mu"
 )
 
+message("MCMC warnings")
+warnings()
+
+message("Checking MCMC")
 source("R/check_mcmc.R")
 n_mcmc <- config$n_mcmc
 check <- check_mcmc(samples, params_check, n_mcmc, dest)
@@ -277,7 +282,13 @@ out_list <- list(
   bad_mcmc = check$bad_mcmc
 )
 
+message("Write to disk")
 write_rds(
   out_list,
   file.path(dest, "simulation_data.rds")
 )
+
+
+
+message("Task " task_id, " done!")
+
