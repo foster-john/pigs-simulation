@@ -22,7 +22,7 @@ hpc_test:
   data_dir: "data"
   n_pp: 30
   n_mcmc: 500
-  n_iter: 5000
+  n_iter: 50000
 
 hpc_production:
   inherits: hpc_test
