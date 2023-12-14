@@ -100,6 +100,7 @@ data_posteriors <- function(samples, constants, data){
 
   require(dplyr)
   require(nimble)
+  require(stringr)
 
   D <- append(constants, data)
 
