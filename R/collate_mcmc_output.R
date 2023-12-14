@@ -112,10 +112,15 @@ collate_mcmc_output <- function(config, sim_results){
                 high = quantile(value, 0.975))
   }
 
-  ###################################################################
-  # start here with configs
-  ###################################################################
-  path <- file.path("analysis", model_dir)
+  top_dir <- config$top_dir
+  analysis_dir <- config$analysis_dir
+  dev_dir <- config$dev_dir
+  model_dir <- config$model_dir
+  project_dir <- config$project_dir
+  start_density <- config$start_density
+  density_dir <- paste0("density_", start_density)
+
+  path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
   if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
   recovery_list <- list()
