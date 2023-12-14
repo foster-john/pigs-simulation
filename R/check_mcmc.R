@@ -49,7 +49,7 @@ check_mcmc <- function(samples, nodes_check, n_mcmc, dest){
     effective_samples = effective_samples,
     burnin = burnin,
     converged = max(psrf$psrf[, "Upper C.I."]) <= 1.1,
-    bad_mcmc = any(is.na(psrf$psrf))
+    bad_mcmc = any(is.na(psrf$psrf)) | any(psrf$psrf > 3)
   )
 
 }
