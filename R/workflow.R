@@ -54,4 +54,11 @@ cl <- makeCluster(config$n_threads)
 sim <- run_simulation(cl, config, df)
 stopCluster(cl)
 
+# -----------------------------------------------------------------
+# Summarize output ----
+# -----------------------------------------------------------------
+
+collate_mcmc_output(config, sim)
+
+
 
