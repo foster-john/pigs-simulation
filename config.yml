@@ -27,7 +27,7 @@ hpc_test:
   data_dir: "data"
   n_pp: 30
   n_mcmc: 500
-  n_iter: 50000
+  n_iter: 10000
   n_threads: 10
 
 hpc_production:
