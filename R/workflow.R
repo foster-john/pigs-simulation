@@ -27,7 +27,7 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 
-config_name <- "dev"
+config_name <- "hpc_test"
 config <- config::get(config = config_name)
 
 # -----------------------------------------------------------------
@@ -45,6 +45,9 @@ df <- df |>
 # -----------------------------------------------------------------
 # Run simulation ----
 # -----------------------------------------------------------------
+
+n_cores <- detectCores()
+message("Number of cores available ", n_cores)
 
 source("R/run_simulation.R")
 cl <- makeCluster(config$n_threads)
