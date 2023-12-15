@@ -7,5 +7,5 @@
 #SBATCH --output=test_sim%J.txt   # output file 
 
 module load R
-Rscript R/workflow.R 
+Rscript R/workflow.R $SLURM_CPUS_PER_TASK 
 
