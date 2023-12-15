@@ -15,28 +15,28 @@ check_mcmc <- function(samples, nodes_check, n_mcmc, dest){
   effective_samples <- effectiveSize(params)
   print(effective_samples)
 
-  message("Calculating burnin...")
-  ff <- tempfile()
-  png(filename = ff)
-  GBR <- gelman.plot(params)
-  dev.off()
-  unlink(ff)
+ # message("Calculating burnin...")
+ # ff <- tempfile()
+ # png(filename = ff)
+ # GBR <- gelman.plot(params)
+ # dev.off()
+ # unlink(ff)
 
-  burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[, , 2] > 1.1, 1, any)), 1) + 1]
-  print(burnin)
+ # burnin <- GBR$last.iter[tail(which(apply(GBR$shrink[, , 2] > 1.1, 1, any)), 1) + 1]
+ # print(burnin)
 
-  if(is.na(burnin) | burnin >= 0.9*nrow(params[[1]])){
-    burnin <- round(n_iter / 4)
-  }
+ # if(is.na(burnin) | burnin >= 0.9*nrow(params[[1]])){
+    burnin <- round(n_iter / 2)
+ # }
 
   samples_burn_mcmc <- window(samples, start = burnin)
   params_burn <- samples_burn_mcmc[, j]
 
-  message("Creating traceplots...")
-  png(filename = file.path(dest, "mcmcTimeseries%03d.png"))
-  plot(params_burn)
-  dev.off()
-  message("  done")
+ # message("Creating traceplots...")
+ # png(filename = file.path(dest, "mcmcTimeseries%03d.png"))
+ # plot(params_burn)
+ # dev.off()
+ # message("  done")
 
   samples_burn_mat <- as.matrix(samples_burn_mcmc)
   draws <- sample.int(nrow(samples_burn_mat), n_mcmc, replace = TRUE)
