@@ -8,6 +8,7 @@
 
 collate_mcmc_output <- function(config, sim_results){
 
+  require(stringr)
   require(dplyr)
   require(tidyr)
   require(nimble)
