@@ -38,11 +38,14 @@ collate_mcmc_output <- function(config, sim_results){
     rds <- sim_results[[i]]
 
     bad_mcmc <- rds$bad_mcmc #| any(rds$psrf > 1.3)
+    converged <- rds$converged
+
+    if(bad_mcmc | !converged) next
+
     task_id <- i
     start_density <- rds$start_density
     # already_collated <- task_id %in% prev_tasks
 
-    # if(bad_mcmc | already_collated) next
 
     samples <- rds$posterior_samples |>
       add_ids(task_id, start_density)
