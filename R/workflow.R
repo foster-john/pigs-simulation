@@ -62,7 +62,9 @@ stopCluster(cl)
 # Summarize output ----
 # -----------------------------------------------------------------
 
+source("R/collate_mcmc_output.R")
 collate_mcmc_output(config, sim)
 
+message("\n\nDONE!")
 
 
