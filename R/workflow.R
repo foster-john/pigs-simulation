@@ -19,16 +19,19 @@
 #
 # --------------------------------------------------------------------
 
-library(parallel)
+renv::load("/home/john.foster/pigs-simulation/")
+
+config_name <- "hpc_test"
+config <- config::get(config = config_name)
+
 library(nimble)
+library(parallel)
 library(coda)
 library(readr)
 library(dplyr)
 library(tidyr)
 library(purrr)
 
-config_name <- "dev"
-config <- config::get(config = config_name)
 
 # -----------------------------------------------------------------
 # Load MIS data ----
@@ -59,7 +62,9 @@ stopCluster(cl)
 # Summarize output ----
 # -----------------------------------------------------------------
 
+source("R/collate_mcmc_output.R")
 collate_mcmc_output(config, sim)
 
+message("\n\nDONE!")
 
 
