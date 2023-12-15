@@ -8,6 +8,7 @@
 
 collate_mcmc_output <- function(config, sim_results){
 
+  require(stringr)
   require(dplyr)
   require(tidyr)
   require(nimble)
@@ -271,7 +272,7 @@ collate_mcmc_output <- function(config, sim_results){
   ## litter size ------
   actual <- 5.290323
   ls_long <- all_samples |>
-    select_pivot_longer("log_mean_ls") |>
+    select_pivot_longer("log_nu") |>
     mutate(value = exp(value))
 
   ls_recovery <- ls_long |>
