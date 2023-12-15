@@ -232,8 +232,8 @@ run_simulation <- function(cl, config, df){
       "p_mu"
     )
 
-    message("MCMC warnings")
-    warnings()
+    # message("MCMC warnings")
+    # warnings()
 
     message("Checking MCMC")
     source("R/check_mcmc.R")
