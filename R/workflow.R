@@ -46,11 +46,12 @@ df <- df |>
 # Run simulation ----
 # -----------------------------------------------------------------
 
-n_cores <- detectCores()
-message("Number of cores available ", n_cores)
+args <- commandArgs(trailingOnly = TRUE)
+n_threads <- args[1]
+message("Number of cores available ", n_threads)
 
 source("R/run_simulation.R")
-cl <- makeCluster(config$n_threads)
+cl <- makeCluster(as.numeric(n_threads))
 sim <- run_simulation(cl, config, df)
 stopCluster(cl)
 
