@@ -120,10 +120,10 @@ run_simulation <- function(cl, config, df){
       method = c("Firearms", "Fixed wing", "Helicopter", "Snares", "Traps"),
       p_unique = c(runif(1), 0, 0, runif(2)),
       rho = c(runif(1, 0.01, 5), # firearms; p_mu[1]
-              runif(1, 1, 30),   # fixed wing
-              runif(1, 1, 30),   # helicopter
-              runif(1, 0.01, 5),  # snare; gamma[1], p_mu[2]
-              runif(1, 0.01, 5)), # traps; gamma[2], p_mu[3]
+	      runif(1, 1, 200),   # fixed wing
+              runif(1, 1, 200),   # helicopter
+              runif(1, 0.1, 15),  # snare; gamma[1], p_mu[2]
+              runif(1, 0.1, 15)), # traps; gamma[2], p_mu[3]
       gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
     )
 
