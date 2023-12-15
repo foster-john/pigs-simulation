@@ -26,11 +26,11 @@ hpc_test:
   data_dir: "data"
   n_pp: 30
   n_mcmc: 500
-  n_iter: 5000
+  n_iter: 10000
 
 hpc_production:
   inherits: hpc_test
   dev_dir: "production"
-  n_pp: 75
+  n_pp: 50
   n_mcmc: 1000
   n_iter: 100000
