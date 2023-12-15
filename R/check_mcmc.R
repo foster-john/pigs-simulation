@@ -1,5 +1,7 @@
 check_mcmc <- function(samples, nodes_check, n_mcmc, dest){
 
+  require(coda)
+
   all_nodes <- colnames(samples[[1]])
   n_iter <- nrow(samples[[1]])
 

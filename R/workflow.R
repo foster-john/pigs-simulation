@@ -27,7 +27,7 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 
-config_name <- "hpc_test"
+config_name <- "dev"
 config <- config::get(config = config_name)
 
 # -----------------------------------------------------------------
