@@ -16,7 +16,6 @@ dev:
   n_pp: 30
   n_mcmc: 500
   n_iter: 1000
-  n_threads: 3
 
 hpc_test:
   top_dir: "/lustrefs/ceah/feral-swine"
@@ -27,8 +26,7 @@ hpc_test:
   data_dir: "data"
   n_pp: 30
   n_mcmc: 500
-  n_iter: 10000
-  n_threads: 10
+  n_iter: 5000
 
 hpc_production:
   inherits: hpc_test
@@ -36,4 +34,3 @@ hpc_production:
   n_pp: 75
   n_mcmc: 1000
   n_iter: 100000
-  n_threads: 96
