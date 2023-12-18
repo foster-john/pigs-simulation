@@ -19,7 +19,8 @@
 #
 # --------------------------------------------------------------------
 
-renv::load("/home/john.foster/pigs-simulation/")
+# renv::load("/home/john.foster/pigs-simulation/")
+renv::config(renv.config.sandbox.enabled = FALSE)
 
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
@@ -54,7 +55,7 @@ n_threads <- args[1]
 message("Number of cores available ", n_threads)
 
 source("R/run_simulation.R")
-cl <- makeCluster(as.numeric(n_threads))
+cl <- makeCluster(as.numeric(n_threads), outfile = paste0("cl_out_", config$start_density, ".txt"))
 sim <- run_simulation(cl, config, df)
 stopCluster(cl)
 
