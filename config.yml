@@ -1,6 +1,6 @@
 default:
   model_dir: "modifiedDM_betaSurvival_dataJoint"
-  start_density: 0.3
+  start_density: 5
   phi_mu: 0.78
   psi_phi: 5
   max_counties: 15
