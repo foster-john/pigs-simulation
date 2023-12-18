@@ -50,21 +50,11 @@ df <- df |>
 # Run simulation ----
 # -----------------------------------------------------------------
 
-args <- commandArgs(trailingOnly = TRUE)
-n_threads <- args[1]
 message("Number of cores available ", n_threads)
-
 source("R/run_simulation.R")
-cl <- makeCluster(as.numeric(n_threads), outfile = paste0("cl_out_", config$start_density, ".txt"))
-sim <- run_simulation(cl, config, df)
-stopCluster(cl)
 
-# -----------------------------------------------------------------
-# Summarize output ----
-# -----------------------------------------------------------------
-
-source("R/collate_mcmc_output.R")
-collate_mcmc_output(config, sim)
+task_id <- Sys.getenv("SLURM_ARRAY_TASK_ID")
+run_simulation(config, df, task_id)
 
 message("\n\nDONE!")
 

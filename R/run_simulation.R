@@ -6,23 +6,14 @@
 #
 # --------------------------------------------------------------------
 
-run_simulation <- function(cl, config, df){
+run_simulation <- function(config, df, task_id){
 
-  export <- c(
-    "config",
-    "df"
-  )
-
-  clusterExport(cl, export, envir = environment())
-
-  clusterEvalQ(cl, {
-
-    library(nimble)
-    library(coda)
-    library(readr)
-    library(dplyr)
-    library(tidyr)
-    library(purrr)
+    require(nimble)
+    require(coda)
+    require(readr)
+    require(dplyr)
+    require(tidyr)
+    require(purrr)
 
     top_dir <- config$top_dir
     out_dir <- config$out_dir
@@ -35,7 +26,10 @@ run_simulation <- function(cl, config, df){
     path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
     message("Simulations will be written to\n   ", path)
 
-    task_id <- Sys.getpid()
+    if(is.na(task_id)){
+      task_id <- Sys.getpid()
+    }
+
     message("  Task ID: ", task_id)
 
     dest <- file.path(path, task_id)
@@ -275,5 +269,5 @@ run_simulation <- function(cl, config, df){
       file.path(dest, "simulation_data.rds")
     )
     return(out_list)
-  })
+
 }
