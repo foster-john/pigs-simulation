@@ -6,426 +6,428 @@
 #
 # --------------------------------------------------------------------
 
-collate_mcmc_output <- function(config, sim_results){
-
-  require(stringr)
-  require(dplyr)
-  require(tidyr)
-  require(nimble)
-  require(coda)
-
-  out_dir <- config$out_dir
-  model_dir <- config$model_dir
-
-  n_simulations <- length(sim_results)
-
-  add_ids <- function(df, task_id, s_density){
-    df |>
-      mutate(simulation = task_id,
-             start_density = s_density)
-  }
-
-  all_samples <- tibble()
-  all_take <- tibble()
-  all_N <- tibble()
-  all_beta_p <- tibble()
-  all_methods <- tibble()
-  all_y <- tibble()
-  all_area <- tibble()
-
-  for(i in seq_len(n_simulations)){
-
-    rds <- sim_results[[i]]
-
-    bad_mcmc <- rds$bad_mcmc #| any(rds$psrf > 1.3)
-    converged <- rds$converged
-
-    if(bad_mcmc | !converged) next
-
-    task_id <- i
-    start_density <- rds$start_density
-    # already_collated <- task_id %in% prev_tasks
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(nimble)
+library(readr)
+library(coda)
 
 
-    samples <- rds$posterior_samples |>
-      add_ids(task_id, start_density)
+config_name <- "hpc_production"
+config <- config::get(config = config_name)
 
-    all_samples <- bind_rows(all_samples, samples)
+top_dir <- config$top_dir
+out_dir <- config$out_dir
+analysis_dir <- config$analysis_dir
+dev_dir <- config$dev_dir
+model_dir <- config$model_dir
+project_dir <- config$project_dir
+start_density <- config$start_density
+density_dir <- paste0("density_", start_density)
 
-    y_pred <- rds$posterior_take
-    colnames(y_pred) <- 1:ncol(y_pred)
-    y_pred <- y_pred |>
-      as_tibble() |>
-      add_ids(task_id, start_density)
-    all_y <- bind_rows(all_y, y_pred)
+path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
 
-    pot_area <- rds$posterior_potential_area
-    pot_area <- as_tibble(pot_area) |>
-      add_ids(task_id, start_density) |>
-      mutate(p_id = 1:n())
-    all_area <- bind_rows(all_area, pot_area)
+density_tasks <- list.files(path)
 
-    take <- rds$take |>
-      add_ids(task_id, start_density) |>
-      mutate(p_id = 1:n())
-    all_take <- bind_rows(all_take, take)
+all_samples <- tibble()
+all_take <- tibble()
+all_N <- tibble()
+all_beta_p <- tibble()
+all_methods <- tibble()
+all_y <- tibble()
+all_area <- tibble()
 
-    obs_flag <- take |>
-      select(property, county, PPNum) |>
-      distinct() |>
-      mutate(obs_flag = 1)
+add_ids <- function(df, task_id, s_density){
+  df |>
+    mutate(simulation = task_id,
+           start_density = s_density)
+}
 
-    N <- rds$N |>
-      add_ids(task_id, start_density) |>
-      left_join(obs_flag) |>
-      mutate(obs_flag = if_else(is.na(obs_flag), 0, obs_flag))
-    all_N <- bind_rows(all_N, N)
+bind_samples <- function(all_bind, ls, t_id, dens){
+  samples <- ls$posterior_samples |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, samples)
+}
 
-    # need a lookup table for known data model covariates
-    bH <- tibble(
-      method_idx = rep(1:nrow(rds$beta_p), ncol(rds$beta_p)),
-      position = rep(1:ncol(rds$beta_p), each = nrow(rds$beta_p)),
-      actual = as.numeric(rds$beta_p)
-    ) |>
-      add_ids(task_id, start_density)
+bind_y <- function(all_bind, ls, t_id, dens){
+  y_pred <- ls$posterior_take
+  colnames(y_pred) <- 1:ncol(y_pred)
+  y_pred <- y_pred |>
+    as_tibble() |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, y_pred)
+}
 
-    all_beta_p <- bind_rows(all_beta_p, bH)
+bind_pot_area <- function(all_bind, ls, t_id, dens){
+  pot_area <- ls$posterior_potential_area
+  pot_area <- as_tibble(pot_area) |>
+    add_ids(t_id, dens) |>
+    mutate(p_id = 1:n())
+  bind_rows(all_bind, pot_area)
+}
 
-    method_lookup <- rds$method_lookup |>
-      add_ids(task_id, start_density)
+bind_take <- function(all_bind, ls, t_id, dens){
+  take <- ls$take |>
+    add_ids(t_id, dens) |>
+    mutate(p_id = 1:n())
+  bind_rows(all_bind, take)
+}
 
-    all_methods <- bind_rows(all_methods, method_lookup)
+bind_N <- function(all_bind, ls, t_id, dens){
+  obs_flag <- ls$take |>
+    select(property, county, PPNum) |>
+    distinct() |>
+    mutate(obs_flag = 1)
 
-  }
+  N <- ls$N |>
+    add_ids(t_id, dens) |>
+    left_join(obs_flag) |>
+    mutate(obs_flag = if_else(is.na(obs_flag), 0, obs_flag))
+  bind_rows(all_bind, N)
+}
 
-  select_pivot_longer <- function(df, node){
-    df |>
-      select(contains(node), simulation, start_density) |>
-      pivot_longer(cols = -c(simulation, start_density),
-                   names_to = "node")
-  }
+bind_beta_p <- function(all_bind, ls, t_id, dens){
+  # need a lookup table for known data model covariates
+  bH <- tibble(
+    method_idx = rep(1:nrow(ls$beta_p), ncol(ls$beta_p)),
+    position = rep(1:ncol(ls$beta_p), each = nrow(ls$beta_p)),
+    actual = as.numeric(ls$beta_p)
+  ) |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, bH)
+}
 
-  recovered <- function(df){
-    df |> mutate(parameter_recovered = if_else(actual >= low & actual <= high, 1, 0))
-  }
+bind_methods <- function(all_bind, ls, t_id, dens){
+  method_lookup <- ls$method_lookup |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, method_lookup)
+}
 
-  my_summary <- function(df){
-    df |>
-      summarise(low = quantile(value, 0.025),
-                med = quantile(value, 0.5),
-                high = quantile(value, 0.975))
-  }
+for(i in seq_along(density_tasks)){
 
-  top_dir <- config$top_dir
-  analysis_dir <- config$analysis_dir
-  dev_dir <- config$dev_dir
-  model_dir <- config$model_dir
-  project_dir <- config$project_dir
-  start_density <- config$start_density
-  density_dir <- paste0("density_", start_density)
+  task_id <- density_tasks[i]
 
-  path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
-  if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  rds <- read_rds(file.path(path, task_id, "simulation_data.rds"))
 
-  recovery_list <- list()
-  residual_list <- list()
+  bad_mcmc <- rds$bad_mcmc | any(rds$psrf > 1.4)
+  converged <- rds$converged
 
-  ## capture probability intercepts ------
-  beta1_long <- all_samples |>
-    select_pivot_longer("beta1") |>
-    mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
-           position = 1)
+  if(bad_mcmc | !converged) next
 
-  beta1_recovery <- beta1_long |>
+  start_density <- rds$start_density
+
+  all_samples <- bind_samples(all_samples, rds, task_id, start_density)
+  all_y <- bind_y(all_y, rds, task_id, start_density)
+  all_area <- bind_pot_area(all_area, rds, task_id, start_density)
+  all_take <- bind_take(all_take, rds, task_id, start_density)
+  all_N <- bind_N(all_N, rds, task_id, start_density)
+  all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
+  all_methods <- bind_beta_p(all_methods, rds, task_id, start_density)
+}
+
+select_pivot_longer <- function(df, node){
+  df |>
+    select(contains(node), simulation, start_density) |>
+    pivot_longer(cols = -c(simulation, start_density),
+                 names_to = "node")
+}
+
+recovered <- function(df){
+  df |> mutate(parameter_recovered = if_else(actual >= low & actual <= high, 1, 0))
+}
+
+my_summary <- function(df){
+  df |>
+    summarise(low = quantile(value, 0.025),
+              med = quantile(value, 0.5),
+              high = quantile(value, 0.975))
+}
+
+
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
+if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
+
+
+recovery_list <- list()
+residual_list <- list()
+
+## capture probability intercepts ------
+beta1_long <- all_samples |>
+  select_pivot_longer("beta1") |>
+  mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
+         position = 1)
+
+recov_beta1 <- function(df){
+  df |>
     group_by(simulation, node, method_idx, position, start_density) |>
     my_summary() |>
     left_join(all_beta_p) |>
     ungroup() |>
     recovered()
+}
 
-  beta1_residual <- beta1_long |>
+resid_beta1 <- function(df){
+  df |>
     left_join(all_beta_p) |>
     mutate(value = value - actual) |>
     group_by(node, position, method_idx, start_density) |>
     my_summary() |>
     ungroup()
+}
 
-  recovery_list$beta1 <- beta1_recovery
-  residual_list$beta1 <- beta1_residual
+recovery_list$beta1 <- recov_beta1(beta1_long)
+residual_list$beta1 <- resid_beta1(beta1_long)
 
-  message("capture intercepts done")
+message("capture intercepts done")
 
-  ## capture probability covariates ------
-  beta_p_long <- all_samples |>
-    select_pivot_longer("beta_p") |>
-    mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
-           position = as.numeric(str_extract(node, "(?<=\\, )\\d")) + 1)
+## capture probability covariates ------
+beta_p_long <- all_samples |>
+  select_pivot_longer("beta_p") |>
+  mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
+         position = as.numeric(str_extract(node, "(?<=\\, )\\d")) + 1)
 
-  beta_p_recovery <- beta_p_long |>
+recov_beta_p <- function(df){
+  df |>
     group_by(simulation, node, method_idx, position, start_density) |>
     my_summary() |>
     left_join(all_beta_p) |>
     ungroup() |>
     recovered()
+}
 
-  beta_p_residual <- beta_p_long |>
+resid_beta_p <- function(df){
+  df |>
     left_join(all_beta_p) |>
     mutate(value = value - actual) |>
     group_by(node, position, method_idx, start_density) |>
     my_summary() |>
     ungroup()
+}
 
-  recovery_list$beta_p <- beta_p_recovery
-  residual_list$beta_p <- beta_p_residual
+recovery_list$beta_p <- recov_beta_p(beta_p_long)
+residual_list$beta_p <- resid_beta_p(beta_p_long)
 
-  message("capture covariates done")
+message("capture covariates done")
 
-  ## gamma ------
+## gamma ------
 
-  gH <- all_methods |>
-    select(idx, gamma, method, simulation) |>
-    filter(method %in% c("Snares", "Traps")) |>
-    mutate(idx = idx - 3) |>
-    rename(actual = gamma)
+gH <- all_methods |>
+  select(idx, gamma, method, simulation) |>
+  filter(method %in% c("Snares", "Traps")) |>
+  mutate(idx = idx - 3) |>
+  rename(actual = gamma)
 
-  gamma_long <- all_samples |>
-    select_pivot_longer("log_gamma[") |>
-    mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
-    mutate(value = exp(value))
+gamma_long <- all_samples |>
+  select_pivot_longer("log_gamma[") |>
+  mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
+  mutate(value = exp(value))
 
-  gamma_recovery <- gamma_long |>
+recov_gamma <- function(df, H){
+  df |>
     group_by(simulation, node, idx, start_density) |>
     my_summary() |>
-    left_join(gH) |>
+    left_join(H) |>
     ungroup() |>
     recovered()
+}
 
-  gamma_residual <- gamma_long |>
-    left_join(gH)|>
+resid_gamma <- function(df, H){
+  df |>
+    left_join(H)|>
     mutate(value = value - actual) |>
     group_by(node, idx, start_density) |>
     my_summary() |>
     ungroup()
+}
 
-  recovery_list$gamma <- gamma_recovery
-  residual_list$gamma <- gamma_residual
+recovery_list$gamma <- recov_gamma(gamma_long, gH)
+residual_list$gamma <- resid_gamma(gamma_long, gH)
 
-  message("saturation constant done")
+message("saturation constant done")
 
-  ## rho ------
-  rH <- all_methods |>
-    select(idx, rho, method, simulation) |>
-    rename(actual = rho)
+## rho ------
+rH <- all_methods |>
+  select(idx, rho, method, simulation) |>
+  rename(actual = rho)
 
-  rho_long<- all_samples |>
-    select_pivot_longer("log_rho[") |>
-    mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
-    mutate(value = exp(value))
+rho_long<- all_samples |>
+  select_pivot_longer("log_rho[") |>
+  mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
+  mutate(value = exp(value))
 
-  rho_recovery <- rho_long |>
-    group_by(simulation, node, idx, start_density) |>
-    my_summary() |>
-    left_join(rH) |>
-    ungroup() |>
-    recovered()
+recovery_list$rho <- recov_gamma(rho_long, rH)
+residual_list$rho <- resid_gamma(rho_long, rH)
 
-  rho_residual <- rho_long |>
-    left_join(rH)|>
-    mutate(value = value - actual) |>
-    group_by(node, idx, start_density) |>
-    my_summary() |>
-    ungroup()
+message("search area done")
 
-  recovery_list$rho <- rho_recovery
-  residual_list$rho <- rho_residual
+## unique area ------
+pH <- all_methods |>
+  filter(idx %in% c(1, 4, 5)) |>
+  select(idx, p_unique, method, simulation) |>
+  rename(actual = p_unique) |>
+  mutate(idx = if_else(idx == 1, idx, idx - 2))
 
-  message("search area done")
+p_mu_long <- all_samples |>
+  select_pivot_longer("p_mu[") |>
+  mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
+  mutate(value = ilogit(value))
 
-  ## unique area ------
-  pH <- all_methods |>
-    filter(idx %in% c(1, 4, 5)) |>
-    select(idx, p_unique, method, simulation) |>
-    rename(actual = p_unique) |>
-    mutate(idx = if_else(idx == 1, idx, idx - 2))
+recovery_list$p_mu <- recov_gamma(p_mu_long, pH)
+residual_list$p_mu <- resid_gamma(p_mu_long, pH)
 
-  p_mu_long <- all_samples |>
-    select_pivot_longer("p_mu[") |>
-    mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
-    mutate(value = ilogit(value))
+message("unique area done")
 
-  p_mu_recovery <- p_mu_long |>
-    group_by(simulation, node, idx, start_density) |>
-    my_summary() |>
-    left_join(pH) |>
-    ungroup() |>
-    recovered()
+## litter size ------
+actual <- 5.290323
+ls_long <- all_samples |>
+  select_pivot_longer("log_nu") |>
+  mutate(value = exp(value))
 
-  p_mu_residual <- p_mu_long |>
-    left_join(pH)|>
-    mutate(value = value - actual) |>
-    group_by(node, idx, start_density) |>
-    my_summary() |>
-    ungroup()
+ls_recovery <- ls_long |>
+  group_by(simulation, node, start_density) |>
+  my_summary() |>
+  mutate(actual = actual) |>
+  ungroup() |>
+  recovered()
 
-  recovery_list$p_mu <- p_mu_recovery
-  residual_list$p_mu <- p_mu_residual
+ls_residual <- ls_long |>
+  mutate(actual = actual) |>
+  mutate(value = value - actual) |>
+  group_by(node, start_density) |>
+  my_summary() |>
+  ungroup()
 
-  message("unique area done")
+recovery_list$litter_size <- ls_recovery
+residual_list$litter_size <- ls_residual
 
-  ## litter size ------
-  actual <- 5.290323
-  ls_long <- all_samples |>
-    select_pivot_longer("log_nu") |>
-    mutate(value = exp(value))
+message("liter size done")
 
-  ls_recovery <- ls_long |>
+## survival ------
+actual <- config$phi_mu
+phi_long <- all_samples |>
+  select_pivot_longer("phi_mu")
+
+recov_phi <- function(df, known){
+  df |>
     group_by(simulation, node, start_density) |>
     my_summary() |>
-    mutate(actual = actual) |>
+    mutate(actual = known) |>
     ungroup() |>
     recovered()
+}
 
-  ls_residual <- ls_long |>
-    mutate(actual = actual) |>
-    mutate(value = value - actual) |>
-    group_by(node, start_density) |>
-    my_summary() |>
-    ungroup()
-
-  recovery_list$litter_size <- ls_recovery
-  residual_list$litter_size <- ls_residual
-
-  message("liter size done")
-
-  ## survival ------
-  actual <- config$phi_mu
-  phi_long <- all_samples |>
-    select_pivot_longer("phi_mu")
-
-  phi_recovery <- phi_long |>
-    group_by(simulation, node, start_density) |>
-    my_summary() |>
-    mutate(actual = actual) |>
-    ungroup() |>
-    recovered()
-
+resid_phi <- function(df, known){
   phi_residual <- phi_long |>
-    mutate(actual = actual) |>
+    mutate(actual = known) |>
     mutate(value = value - actual) |>
     group_by(node, start_density) |>
     my_summary() |>
     ungroup()
+}
 
-  recovery_list$phi_mu <- phi_recovery
-  residual_list$phi_mu <- phi_residual
+recovery_list$phi_mu <- recov_phi(phi_long, actual)
+residual_list$phi_mu <- resid_phi(phi_long, actual)
 
-  actual <- config$psi_phi
-  psi_phi_long <- all_samples |>
-    select_pivot_longer("psi_phi")
+actual <- config$psi_phi
+psi_phi_long <- all_samples |>
+  select_pivot_longer("psi_phi")
 
-  psi_phi_recovery <- psi_phi_long |>
-    group_by(simulation, node, start_density) |>
-    my_summary() |>
-    mutate(actual = actual) |>
-    ungroup() |>
-    recovered()
+recovery_list$psi_phi <- recov_phi(psi_phi_long, actual)
+residual_list$psi_phi <- resid_phi(psi_phi_long, actual)
 
-  psi_phi_residual <- psi_phi_long |>
-    mutate(actual = actual) |>
-    mutate(value = value - actual) |>
-    group_by(node, start_density) |>
-    my_summary() |>
-    ungroup()
+message("survival done")
 
-  recovery_list$psi_phi <- psi_phi_recovery
-  residual_list$psi_phi <- psi_phi_residual
+write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
+write_rds(residual_list, file.path(path, "parameterResidual.rds"))
 
-  message("survival done")
-  write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
-  write_rds(residual_list, file.path(path, "parameterResidual.rds"))
+## abundance ------
+abundance <- all_N |>
+  rename(abundance = N)
 
-  ## abundance ------
-  abundance <- all_N |>
-    rename(abundance = N)
-
-  xn <- all_samples |>
+get_xn <- function(df, H){
+  df |>
     select_pivot_longer("xn[") |>
     filter(!is.na(value)) |>
     mutate(n_id = as.numeric(str_extract(node, "(?<=\\[)\\d*"))) |>
-    left_join(abundance) |>
+    left_join(H) |>
     filter(!is.na(abundance)) |>
     mutate(estimated_density = value / property_area)
+}
 
-  xn_posterior <- xn |>
-    group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
-    summarise(low_abundance = quantile(value, 0.025),
-              med_abundance = quantile(value, 0.5),
-              high_abundance = quantile(value, 0.975),
-              var_abundnace = var(value),
-              low_density = quantile(estimated_density, 0.025),
-              med_density = quantile(estimated_density, 0.5),
-              high_density = quantile(estimated_density, 0.975),
-              var_density = var(estimated_density)) |>
-    ungroup()
+xn_posterior <- all_samples |>
+  get_xn(abundance) |>
+  group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
+  summarise(low_abundance = quantile(value, 0.025),
+            med_abundance = quantile(value, 0.5),
+            high_abundance = quantile(value, 0.975),
+            var_abundnace = var(value),
+            low_density = quantile(estimated_density, 0.025),
+            med_density = quantile(estimated_density, 0.5),
+            high_density = quantile(estimated_density, 0.975),
+            var_density = var(estimated_density)) |>
+  ungroup()
 
-  message("posterior abundance done")
+message("posterior abundance done")
 
-  xn_error <- xn |>
-    group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
-    summarise(mae_abundance = mean(abs(value - abundance)),
-              mae_density = mean(abs(estimated_density - density)),
-              mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
-              mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
-              mbias_abundance = mean(value - abundance),
-              mbias_density = mean(estimated_density - density),
-              mse_abundance = mean((value - abundance)^2),
-              mse_density = mean((estimated_density - density)^2),
-              rmse_abundance = (sqrt(mse_abundance)),
-              rmse_density = (sqrt(mse_density))) |>
-    ungroup() |>
-    arrange(simulation, property, PPNum) |>
-    group_by(simulation, property) |>
-    mutate(delta = PPNum - lag(PPNum)) |>
-    ungroup()
+xn_error <- all_samples |>
+  get_xn(abundance) |>
+  group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
+  summarise(mae_abundance = mean(abs(value - abundance)),
+            mae_density = mean(abs(estimated_density - density)),
+            mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = (sqrt(mse_abundance)),
+            rmse_density = (sqrt(mse_density))) |>
+  ungroup() |>
+  arrange(simulation, property, PPNum) |>
+  group_by(simulation, property) |>
+  mutate(delta = PPNum - lag(PPNum)) |>
+  ungroup()
 
+abundance_list <- list(
+  abundance_summaries = xn_posterior,
+  abundance_metrics = xn_error
+)
 
-  abundance_list <- list(
-    abundance_summaries = xn_posterior,
-    abundance_metrics = xn_error
-  )
-  write_rds(abundance_list, file.path(path, "abundance.rds"))
-  message("abundance metrics done")
+write_rds(abundance_list, file.path(path, "abundance.rds"))
+message("abundance metrics done")
 
-  posterior_take <- all_y |>
+get_post_take <- function(df, H){
+  df |>
     pivot_longer(cols = -c(simulation, start_density),
                  names_to = "p_id") |>
     filter(!is.na(value)) |>
     mutate(p_id = as.numeric(p_id)) |>
-    left_join(all_take)
-
-  take_summaries <- posterior_take |>
-    group_by(simulation, p_id, start_density) |>
-    my_summary() |>
-    ungroup() |>
-    left_join(all_take)
-
-  take_metrics <- posterior_take |>
-    group_by(simulation, p_id, start_density) |>
-    summarise(mae_abundance = mean(abs(value - take)),
-              mpe_abundance = mean(abs((value+1) - (take+1))/(take+1))*100,
-              mbias_abundance = mean(value - take),
-              mse_abundance = mean((value - take)^2),
-              rmse_abundance = (sqrt(mse_abundance))) |>
-    ungroup() |>
-    left_join(all_take)
-
-  take_list <- list(
-    take_summaries = take_summaries,
-    take_metrics = take_metrics
-  )
-  write_rds(take_list, file.path(path, "take.rds"))
-  message("posterior take done")
+    left_join(H)
 }
 
+take_summaries <- all_y |>
+  get_post_take(all_take) |>
+  group_by(simulation, p_id, start_density) |>
+  my_summary() |>
+  ungroup() |>
+  left_join(all_take)
 
+take_metrics <- all_y |>
+  get_post_take(all_take) |>
+  group_by(simulation, p_id, start_density) |>
+  summarise(mae_abundance = mean(abs(value - take)),
+            mpe_abundance = mean(abs((value+1) - (take+1))/(take+1))*100,
+            mbias_abundance = mean(value - take),
+            mse_abundance = mean((value - take)^2),
+            rmse_abundance = (sqrt(mse_abundance))) |>
+  ungroup() |>
+  left_join(all_take)
+
+take_list <- list(
+  take_summaries = take_summaries,
+  take_metrics = take_metrics
+)
+write_rds(take_list, file.path(path, "take.rds"))
+message("posterior take done")
 
