@@ -19,6 +19,8 @@
 #
 # --------------------------------------------------------------------
 
+start <- Sys.time()
+
 Sys.setenv(RENV_CONFIG_SANDBOX_ENABLED = FALSE)
 renv::load("/home/john.foster/pigs-simulation/")
 
@@ -37,7 +39,7 @@ library(purrr)
 # -----------------------------------------------------------------
 # Load MIS data ----
 # -----------------------------------------------------------------
-message(" MIS data intake")
+message("MIS data intake")
 top_dir <- config$top_dir
 data_dir <- config$data_dir
 df <- read_rds(file.path(top_dir, data_dir, "insitu/MIS_4weekPP.rds"))
@@ -52,7 +54,7 @@ df <- df |>
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- args[1]
-message("  Task ID: ", task_id)
+message("Task ID: ", task_id)
 
 source("R/run_simulation.R")
 out_list <- run_simulation(config, df, task_id)
@@ -69,6 +71,9 @@ write_rds(
 
 # source("R/collate_mcmc_output.R")
 # collate_mcmc_output(config, sim)
+
+message("\nRun time: ")
+print(Sys.time() - start)
 
 message("\n\nDONE!")
 
