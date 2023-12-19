@@ -130,7 +130,7 @@ for(i in seq_along(density_tasks)){
   all_take <- bind_take(all_take, rds, task_id, start_density)
   all_N <- bind_N(all_N, rds, task_id, start_density)
   all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
-  all_methods <- bind_beta_p(all_methods, rds, task_id, start_density)
+  all_methods <- bind_methods(all_methods, rds, task_id, start_density)
 
   setTxtProgressBar(pb, i)
 }
