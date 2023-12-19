@@ -3,6 +3,7 @@ fit_mcmc <- function(modelCode, data, constants, n_iter, n_chains, custom_sample
   require(nimble)
 
   source("R/calc_log_potential_area.R")
+  source("R/inits.R")
 
   Rmodel <- nimbleModel(
     code = modelCode,
@@ -11,16 +12,20 @@ fit_mcmc <- function(modelCode, data, constants, n_iter, n_chains, custom_sample
     inits = inits(data, constants),
     calculate = TRUE
   )
+  Rmodel$initializeInfo()
 
   for(i in 1:constants$n_survey){
     N_model <- Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]]
-    n <- N_model - data$y_sum[i]
-    if(n < 0){
+    n <- round(N_model - data$y_sum[i])
+    if(n <= 0){
+      print(i)
+      n <- if_else(n == 0, 2, n)
       Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]] <- N_model + n^2
     }
   }
 
-  Rmodel$initializeInfo()
+  # Rmodel$simulate()
+  # Rmodel$calculate()
 
   # default MCMC configuration
   mcmcConf <- configureMCMC(Rmodel, useConjugacy = TRUE)
@@ -28,6 +33,7 @@ fit_mcmc <- function(modelCode, data, constants, n_iter, n_chains, custom_sample
   if(!is.null(monitors_add)){
     mcmcConf$addMonitors(monitors_add)
   }
+
 
   if(!is.null(custom_samplers)){
     for(i in seq_len(nrow(custom_samplers))){
