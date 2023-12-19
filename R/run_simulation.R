@@ -192,7 +192,9 @@ run_simulation <- function(config, df, task_id){
     message("Fitting MCMC with ", n_iter, " iterations across ", n_chains, " chains")
 
     source("R/fit_mcmc.R")
+    cl <- makeCluster(n_chains)
     samples <- fit_mcmc(
+      cl,
       modelCode,
       data,
       constants,
@@ -201,6 +203,8 @@ run_simulation <- function(config, df, task_id){
       custom_samplers,
       monitors_add
     )
+    stopCluster(cl)
+    samples <- as.mcmc.list(samples)
 
     # -----------------------------------------------------------------
     # Check MCMC ----
