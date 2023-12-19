@@ -189,7 +189,7 @@ resid_beta1 <- function(df){
 recovery_list$beta1 <- recov_beta1(beta1_long)
 residual_list$beta1 <- resid_beta1(beta1_long)
 
-message("capture intercepts done")
+message("\ncapture intercepts done\n")
 
 ## capture probability covariates ------
 beta_p_long <- all_samples |>
@@ -218,9 +218,11 @@ resid_beta_p <- function(df){
 recovery_list$beta_p <- recov_beta_p(beta_p_long)
 residual_list$beta_p <- resid_beta_p(beta_p_long)
 
-message("capture covariates done")
+message("\ncapture covariates done\n")
 
 ## gamma ------
+
+all_methods
 
 gH <- all_methods |>
   select(idx, gamma, method, simulation) |>
