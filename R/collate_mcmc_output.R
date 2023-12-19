@@ -29,6 +29,10 @@ density_dir <- paste0("density_", start_density)
 path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
 
 density_tasks <- list.files(path)
+message("Tasks to collate ", length(density_tasks))
+
+density_tasks <- 1:5
+print(density_tasks)
 
 all_samples <- tibble()
 all_take <- tibble()
