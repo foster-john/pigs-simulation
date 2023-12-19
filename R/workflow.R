@@ -51,21 +51,19 @@ df <- df |>
 # -----------------------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-n_threads <- args[1]
-message("Number of cores available ", n_threads)
+task_id <- args[1]
+message("  Task ID: ", task_id)
 
 source("R/run_simulation.R")
-cl <- makeCluster(as.numeric(n_threads))
-# outfile = paste0("cl_out_", config$start_density, ".txt"))
-sim <- run_simulation(cl, config, df)
-stopCluster(cl)
+run_simulation(config, df, task_id)
+
 
 # -----------------------------------------------------------------
 # Summarize output ----
 # -----------------------------------------------------------------
 
-source("R/collate_mcmc_output.R")
-collate_mcmc_output(config, sim)
+# source("R/collate_mcmc_output.R")
+# collate_mcmc_output(config, sim)
 
 message("\n\nDONE!")
 
