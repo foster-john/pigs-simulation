@@ -25,8 +25,8 @@ hpc_test:
   analysis_dir: "analysis"
   data_dir: "data"
   n_pp: 20
-  n_mcmc: 100
-  n_iter: 100000
+  n_mcmc: 500
+  n_iter: 50000
 
 hpc_production:
   inherits: hpc_test
