@@ -59,12 +59,6 @@ message("Task ID: ", task_id)
 source("R/run_simulation.R")
 out_list <- run_simulation(config, df, task_id)
 
-message("Write to disk")
-write_rds(
-  out_list,
-  file.path(dest, "simulation_data.rds")
-)
-
 # -----------------------------------------------------------------
 # Summarize output ----
 # -----------------------------------------------------------------

@@ -258,6 +258,13 @@ run_simulation <- function(config, df, task_id){
       bad_mcmc = check$bad_mcmc
     )
 
+    message("Write to disk")
+
+    write_rds(
+      out_list,
+      file.path(dest, "simulation_data.rds")
+    )
+
     return(out_list)
 
 }
