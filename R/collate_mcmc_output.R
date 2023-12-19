@@ -256,7 +256,7 @@ resid_gamma <- function(df, H){
 recovery_list$gamma <- recov_gamma(gamma_long, gH)
 residual_list$gamma <- resid_gamma(gamma_long, gH)
 
-message("saturation constant done")
+message("\nsaturation constant done\n")
 
 ## rho ------
 rH <- all_methods |>
@@ -271,7 +271,7 @@ rho_long<- all_samples |>
 recovery_list$rho <- recov_gamma(rho_long, rH)
 residual_list$rho <- resid_gamma(rho_long, rH)
 
-message("search area done")
+message("\nsearch area done\n")
 
 ## unique area ------
 pH <- all_methods |>
@@ -288,7 +288,7 @@ p_mu_long <- all_samples |>
 recovery_list$p_mu <- recov_gamma(p_mu_long, pH)
 residual_list$p_mu <- resid_gamma(p_mu_long, pH)
 
-message("unique area done")
+message("\nunique area done\n")
 
 ## litter size ------
 actual <- 5.290323
@@ -313,7 +313,7 @@ ls_residual <- ls_long |>
 recovery_list$litter_size <- ls_recovery
 residual_list$litter_size <- ls_residual
 
-message("liter size done")
+message("\nliter size done\n")
 
 ## survival ------
 actual <- config$phi_mu
@@ -348,7 +348,7 @@ psi_phi_long <- all_samples |>
 recovery_list$psi_phi <- recov_phi(psi_phi_long, actual)
 residual_list$psi_phi <- resid_phi(psi_phi_long, actual)
 
-message("survival done")
+message("\nsurvival done\n")
 
 write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
 write_rds(residual_list, file.path(path, "parameterResidual.rds"))
@@ -380,7 +380,7 @@ xn_posterior <- all_samples |>
             var_density = var(estimated_density)) |>
   ungroup()
 
-message("posterior abundance done")
+message("\nposterior abundance done\n")
 
 xn_error <- all_samples |>
   get_xn(abundance) |>
@@ -407,7 +407,7 @@ abundance_list <- list(
 )
 
 write_rds(abundance_list, file.path(path, "abundance.rds"))
-message("abundance metrics done")
+message("\nabundance metrics done\n")
 
 get_post_take <- function(df, H){
   df |>
@@ -441,5 +441,5 @@ take_list <- list(
   take_metrics = take_metrics
 )
 write_rds(take_list, file.path(path, "take.rds"))
-message("posterior take done")
+message("\nposterior take done\n")
 
