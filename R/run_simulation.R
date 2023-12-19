@@ -24,15 +24,9 @@ run_simulation <- function(config, df, task_id){
     density_dir <- paste0("density_", start_density)
 
     path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
-    message("Simulations will be written to\n   ", path)
-
-    if(is.na(task_id)){
-      task_id <- Sys.getpid()
-    }
-
-    message("  Task ID: ", task_id)
-
     dest <- file.path(path, task_id)
+    message("Simulations will be written to\n   ", dest)
+
     if(!dir.exists(dest)) dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 
     # need a lookup table for property IDs and how may methods they employ ----
@@ -180,9 +174,6 @@ run_simulation <- function(config, df, task_id){
     constants <- nimble_data$constants
     data <- nimble_data$data
 
-    source("R/inits.R")
-    inits_test <- inits(data, constants)
-
     custom_samplers <- tribble(
       ~node,            ~type,
       "log_nu",         "slice",
@@ -193,7 +184,7 @@ run_simulation <- function(config, df, task_id){
 
     source("R/model_removal_dm.R")
 
-    monitors_add <- c("xn", "p", "log_theta")
+    monitors_add <- c("xn")
 
     n_iter <- config$n_iter
     n_chains <- config$n_chains
