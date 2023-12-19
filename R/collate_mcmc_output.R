@@ -108,6 +108,9 @@ bind_methods <- function(all_bind, ls, t_id, dens){
   bind_rows(all_bind, method_lookup)
 }
 
+message("Loop through tasks...")
+
+pb <- txtProgressBar(max = length(density_tasks), style = 1)
 for(i in seq_along(density_tasks)){
 
   task_id <- density_tasks[i]
@@ -117,7 +120,7 @@ for(i in seq_along(density_tasks)){
   bad_mcmc <- rds$bad_mcmc | any(rds$psrf > 1.4)
   converged <- rds$converged
 
-  if(bad_mcmc | !converged) next
+  if(bad_mcmc) next
 
   start_density <- rds$start_density
 
@@ -128,7 +131,10 @@ for(i in seq_along(density_tasks)){
   all_N <- bind_N(all_N, rds, task_id, start_density)
   all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
   all_methods <- bind_beta_p(all_methods, rds, task_id, start_density)
+
+  setTxtProgressBar(pb, i)
 }
+close(pb)
 
 select_pivot_longer <- function(df, node){
   df |>
