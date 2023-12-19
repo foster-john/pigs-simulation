@@ -170,7 +170,9 @@ n_method_properties <- function(df, n_properties, n, n_pp){
       pull(property) |>
       unique()
 
-    if(nm >= 4){
+    np <- length(p)
+
+    if(nm >= 4 | np <= 3){
       return_df |>
         filter(property %in% p) |>
         mutate(delta = if_else(delta == 0, sample.int(20, 1), delta))
