@@ -5,12 +5,12 @@ inits <- function(data, constants, dir = NULL){
   with(append(data, constants), {
 
     if(is.null(dir)){
-      beta1 <- rnorm(n_method, -1, 0.25)
+      beta1 <- rnorm(n_method, 0, 0.25)
       beta_p <- matrix(rnorm(m_p*n_method, 0, 0.1), n_method, m_p)
       p_mu <- rnorm(3)
       log_gamma <- log(runif(2, 0.1, 2))
       log_rho <- log(
-        c(runif(1, 0.1, 3), runif(1, 8, 15), runif(1, 20, 25), runif(1, 0.75, 1.5), runif(1, 0.75, 1.5))
+        c(runif(1, 0.1, 5), runif(1, 2, 200), runif(1, 2, 200), runif(1, 0.75, 1.5), runif(1, 0.75, 1.5))
       )
       psi_phi <- runif(1, 2, 4)
       phi_mu <- runif(1, 0.7, 0.8)
@@ -59,7 +59,7 @@ inits <- function(data, constants, dir = NULL){
         } else {
           p <- exp(log_theta[1] + sum(log(1 - exp(log_theta[1:(j-1)]))))
         }
-        swine <- max(y[idx], 3)
+        swine <- max(y[idx], 1)
         # print(swine)
         nr[j] <- swine / p
 
@@ -69,23 +69,38 @@ inits <- function(data, constants, dir = NULL){
 
     # n_init <- rpois(n_property, property_area*8)
 
-    a <- phi_mu * psi_phi
-    b <- (1 - phi_mu) * psi_phi
-    mean_lpy <- 1
-    zeta <- mean_lpy / 365 * pp_len * mean_ls
-    dm <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
-    N <- S <- R <- Z <- dm
-    for(i in 1:n_property){
-      N[i, all_pp[i, 1]] <- n_init[i]
-      for(t in 2:n_time_prop[i]){
-        Z[i, t-1] <- N[i, all_pp[i, t-1]]
-        S[i, t-1] <- Z[i, t-1] * rbeta(1, a, b)
-        R[i, t-1] <- zeta * Z[i, t-1] / 2
-        N[i, all_pp[i, t]] <- round(S[i, t-1] + R[i, t-1])
-      }
+    # a <- phi_mu * psi_phi
+    # b <- (1 - phi_mu) * psi_phi
+    # mean_lpy <- 1
+    # zeta <- mean_lpy / 365 * pp_len * mean_ls
+    # dm <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
+    # N <- S <- R <- Z <- dm
+    # for(i in 1:n_property){
+    #   N[i, all_pp[i, 1]] <- n_init[i]
+    #   for(t in 2:n_time_prop[i]){
+    #     Z[i, t-1] <- N[i, all_pp[i, t-1]]
+    #     S[i, t-1] <- Z[i, t-1] * rbeta(1, a, b)
+    #     R[i, t-1] <- zeta * Z[i, t-1] / 2
+    #     N[i, all_pp[i, t]] <- round(S[i, t-1] + R[i, t-1])
+    #   }
+    # }
+
+    max_n <- tibble(prop = p_property_idx,
+                    pp = p_pp_idx,
+                    y_sum = y_sum,
+                    y = y) |>
+      group_by(prop, pp) |>
+      filter(y_sum == max(y_sum)) |>
+      ungroup()
+
+    N <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
+    for(i in 1:nrow(max_n)){
+      N[max_n$prop[i], max_n$pp[i]] <- max_n$y_sum[i] + max_n$y[i] + rpois(1, 50)
     }
 
-    buffer <- 500
+    n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
+
+    buffer <- 1000
     list(
       log_lambda_1 = log(n_init + buffer),
       beta_p = beta_p,
