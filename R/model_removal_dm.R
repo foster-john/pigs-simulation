@@ -32,7 +32,8 @@ modelCode <- nimbleCode({
   log(nu) <- log_nu
 
   ## convert to expected number of pigs per primary period
-  zeta <- nu * pp_len / 365
+  log_zeta <- log(pp_len) + log_nu - log(365)
+  log(zeta) <- log_zeta
   for(i in 1:n_ls){
     J[i] ~ dpois(nu)
   }
