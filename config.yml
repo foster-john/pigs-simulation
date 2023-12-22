@@ -1,10 +1,10 @@
 default:
-  model_dir: "modifiedDM_betaSurvival_dataJoint"
-  # start_density: 0.3
+  model_dir: "betaSurvival"
+  start_density: 0.3
   # start_density: 1.475
   # start_density: 2.65
   # start_density: 3.825
-  start_density: 5
+  # start_density: 5
   phi_mu: 0.78
   psi_phi: 5
   max_counties: 15
@@ -37,4 +37,4 @@ hpc_production:
   dev_dir: "production"
   n_pp: 50
   n_mcmc: 500
-  n_iter: 100000
+  n_iter: 300000
