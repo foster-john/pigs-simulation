@@ -22,7 +22,7 @@ check_mcmc <- function(samples, nodes_check, n_mcmc, dest){
   samples_burn_mcmc <- window(samples, start = burnin)
   params_burn <- samples_burn_mcmc[, j]
 
-  write_rds(list(params_burn), paste0(dest, "parameters_burnin.rds"))
+  write_rds(list(params_burn), file.path(dest, "parameters_burnin.rds"))
 
   samples_burn_mat <- as.matrix(samples_burn_mcmc)
   draws <- sample.int(nrow(samples_burn_mat), n_mcmc, replace = TRUE)
