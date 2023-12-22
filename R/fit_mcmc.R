@@ -86,7 +86,7 @@ fit_mcmc <- function(cl, modelCode, data, constants, n_iter, n_chains, custom_sa
       Cmcmc,
       niter = n_iter,
       nchains = 1,
-      nburnin = 100000,
+      nburnin = n_iter * 2 / 3,
       samplesAsCodaMCMC = TRUE
     )
 
