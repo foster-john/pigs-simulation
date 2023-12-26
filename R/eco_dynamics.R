@@ -63,7 +63,10 @@ simulate_dm <- function(
     N_spin <- process_model(N_spin, zeta, a_phi, b_phi)
   }
 
-  if(N_spin == 0) return(NULL)
+  extinct <- N_spin == 0
+  too_dense <- N_spin / survey_area > 10
+
+  if(extinct | too_dense) return(NULL)
 
   N <- numeric(n_time)
   N[1] <- N_spin
