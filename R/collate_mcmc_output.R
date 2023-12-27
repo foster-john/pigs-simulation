@@ -31,7 +31,7 @@ path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir
 density_tasks <- list.files(path)
 message("Tasks to collate ", length(density_tasks))
 
-density_tasks <- 1:5
+density_tasks <- 1:20
 print(density_tasks)
 
 all_samples <- tibble()
@@ -41,6 +41,7 @@ all_beta_p <- tibble()
 all_methods <- tibble()
 all_y <- tibble()
 all_area <- tibble()
+all_psrf <- tibble()
 
 add_ids <- function(df, task_id, s_density){
   df |>
@@ -108,6 +109,15 @@ bind_methods <- function(all_bind, ls, t_id, dens){
   bind_rows(all_bind, method_lookup)
 }
 
+bind_psrf <- function(all_bind, ls, t_id, dens){
+  names <- rownames(ls$psrf)
+  psrf <- ls$psrf |>
+    as_tibble() |>
+    mutate(node = names) |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, psrf)
+}
+
 message("Loop through tasks...")
 
 pb <- txtProgressBar(max = length(density_tasks), style = 1)
@@ -120,7 +130,7 @@ for(i in seq_along(density_tasks)){
   bad_mcmc <- rds$bad_mcmc | any(rds$psrf > 1.4)
   converged <- rds$converged
 
-  if(bad_mcmc) next
+  # if(bad_mcmc) next
 
   start_density <- rds$start_density
 
@@ -131,6 +141,7 @@ for(i in seq_along(density_tasks)){
   all_N <- bind_N(all_N, rds, task_id, start_density)
   all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
   all_methods <- bind_methods(all_methods, rds, task_id, start_density)
+  all_psrf <- bind_psrf(all_psrf, rds, task_id, start_density)
 
   setTxtProgressBar(pb, i)
 }
@@ -168,13 +179,14 @@ beta1_long <- all_samples |>
   mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
          position = 1)
 
-recov_beta1 <- function(df){
+recov_beta1 <- function(df, psrf){
   df |>
     group_by(simulation, node, method_idx, position, start_density) |>
     my_summary() |>
     left_join(all_beta_p) |>
     ungroup() |>
-    recovered()
+    recovered() |>
+    left_join(psrf)
 }
 
 resid_beta1 <- function(df){
@@ -186,7 +198,7 @@ resid_beta1 <- function(df){
     ungroup()
 }
 
-recovery_list$beta1 <- recov_beta1(beta1_long)
+recovery_list$beta1 <- recov_beta1(beta1_long, all_psrf)
 residual_list$beta1 <- resid_beta1(beta1_long)
 
 message("\ncapture intercepts done\n")
@@ -197,13 +209,14 @@ beta_p_long <- all_samples |>
   mutate(method_idx = as.numeric(str_extract(node, "(?<=\\[)\\d")),
          position = as.numeric(str_extract(node, "(?<=\\, )\\d")) + 1)
 
-recov_beta_p <- function(df){
+recov_beta_p <- function(df, psrf){
   df |>
     group_by(simulation, node, method_idx, position, start_density) |>
     my_summary() |>
     left_join(all_beta_p) |>
     ungroup() |>
-    recovered()
+    recovered() |>
+    left_join(psrf)
 }
 
 resid_beta_p <- function(df){
@@ -215,7 +228,7 @@ resid_beta_p <- function(df){
     ungroup()
 }
 
-recovery_list$beta_p <- recov_beta_p(beta_p_long)
+recovery_list$beta_p <- recov_beta_p(beta_p_long, all_psrf)
 residual_list$beta_p <- resid_beta_p(beta_p_long)
 
 message("\ncapture covariates done\n")
@@ -235,13 +248,14 @@ gamma_long <- all_samples |>
   mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
   mutate(value = exp(value))
 
-recov_gamma <- function(df, H){
+recov_gamma <- function(df, H, psrf){
   df |>
     group_by(simulation, node, idx, start_density) |>
     my_summary() |>
     left_join(H) |>
     ungroup() |>
-    recovered()
+    recovered() |>
+    left_join(psrf)
 }
 
 resid_gamma <- function(df, H){
@@ -253,7 +267,7 @@ resid_gamma <- function(df, H){
     ungroup()
 }
 
-recovery_list$gamma <- recov_gamma(gamma_long, gH)
+recovery_list$gamma <- recov_gamma(gamma_long, gH, all_psrf)
 residual_list$gamma <- resid_gamma(gamma_long, gH)
 
 message("\nsaturation constant done\n")
@@ -268,7 +282,7 @@ rho_long<- all_samples |>
   mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
   mutate(value = exp(value))
 
-recovery_list$rho <- recov_gamma(rho_long, rH)
+recovery_list$rho <- recov_gamma(rho_long, rH, all_psrf)
 residual_list$rho <- resid_gamma(rho_long, rH)
 
 message("\nsearch area done\n")
@@ -285,7 +299,7 @@ p_mu_long <- all_samples |>
   mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
   mutate(value = ilogit(value))
 
-recovery_list$p_mu <- recov_gamma(p_mu_long, pH)
+recovery_list$p_mu <- recov_gamma(p_mu_long, pH, all_psrf)
 residual_list$p_mu <- resid_gamma(p_mu_long, pH)
 
 message("\nunique area done\n")
@@ -301,7 +315,8 @@ ls_recovery <- ls_long |>
   my_summary() |>
   mutate(actual = actual) |>
   ungroup() |>
-  recovered()
+  recovered() |>
+  left_join(all_psrf)
 
 ls_residual <- ls_long |>
   mutate(actual = actual) |>
@@ -320,13 +335,14 @@ actual <- config$phi_mu
 phi_long <- all_samples |>
   select_pivot_longer("phi_mu")
 
-recov_phi <- function(df, known){
+recov_phi <- function(df, known, psrf){
   df |>
     group_by(simulation, node, start_density) |>
     my_summary() |>
     mutate(actual = known) |>
     ungroup() |>
-    recovered()
+    recovered() |>
+    left_join(psrf)
 }
 
 resid_phi <- function(df, known){
@@ -338,14 +354,14 @@ resid_phi <- function(df, known){
     ungroup()
 }
 
-recovery_list$phi_mu <- recov_phi(phi_long, actual)
+recovery_list$phi_mu <- recov_phi(phi_long, actual, all_psrf)
 residual_list$phi_mu <- resid_phi(phi_long, actual)
 
 actual <- config$psi_phi
 psi_phi_long <- all_samples |>
   select_pivot_longer("psi_phi")
 
-recovery_list$psi_phi <- recov_phi(psi_phi_long, actual)
+recovery_list$psi_phi <- recov_phi(psi_phi_long, actual, all_psrf)
 residual_list$psi_phi <- resid_phi(psi_phi_long, actual)
 
 message("\nsurvival done\n")
