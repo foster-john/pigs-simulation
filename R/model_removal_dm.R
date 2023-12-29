@@ -58,7 +58,7 @@ modelCode <- nimbleCode({
       min(0, log_potential_area[i] - log_survey_area_km2[i])
 
     # likelihood
-    y[i] ~ dpois(p[i] * (N[p_property_idx[i], p_pp_idx[i]] - y_sum[i]))
+    y[i] ~ dpois(p[i] * (N[p_property_idx[i], p_pp_idx[i]]))
 
   }
 
