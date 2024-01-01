@@ -29,43 +29,43 @@ inits <- function(data, constants, dir = NULL){
       log_rho <- jitter(init_mu[grep("log_rho[", names(init_mu), fixed = TRUE)])
     }
 
-    n_init <- numeric(n_property)
-    for(i in 1:n_property){
-
-      p_survey <- which(p_property_idx == i)
-      r <- which(min(p_pp_idx[p_survey]) == p_pp_idx[p_survey])
-
-      nr <- log_theta <- numeric(length(r))
-      for(j in 1:length(r)){
-        idx <- r[j]
-
-        log_potential_area <- calc_log_potential_area(
-          log_rho = log_rho,
-          log_gamma = log_gamma,
-          p_unique = ilogit(p_mu),
-          log_effort_per = log_effort_per[idx],
-          effort_per = effort_per[idx],
-          n_trap_m1 = n_trap_m1[idx],
-          log_pi = log_pi,
-          method = method[idx]
-        )
-
-        log_theta[j] <- log(ilogit(beta1[method[idx]] +
-                                     nimble::inprod(X_p[county[idx], ], beta_p[method[idx],]))) +
-          min(0, log_potential_area - log_survey_area_km2[idx])
-
-        if(j == 1){
-          p <- exp(log_theta[1])
-        } else {
-          p <- exp(log_theta[1] + sum(log(1 - exp(log_theta[1:(j-1)]))))
-        }
-        swine <- max(y[idx], 1)
-        # print(swine)
-        nr[j] <- swine / p
-
-      }
-      n_init[i] <- rpois(1, mean(nr))
-    }
+    # n_init <- numeric(n_property)
+    # for(i in 1:n_property){
+    #
+    #   p_survey <- which(p_property_idx == i)
+    #   r <- which(min(p_pp_idx[p_survey]) == p_pp_idx[p_survey])
+    #
+    #   nr <- log_theta <- numeric(length(r))
+    #   for(j in 1:length(r)){
+    #     idx <- r[j]
+    #
+    #     log_potential_area <- calc_log_potential_area(
+    #       log_rho = log_rho,
+    #       log_gamma = log_gamma,
+    #       p_unique = ilogit(p_mu),
+    #       log_effort_per = log_effort_per[idx],
+    #       effort_per = effort_per[idx],
+    #       n_trap_m1 = n_trap_m1[idx],
+    #       log_pi = log_pi,
+    #       method = method[idx]
+    #     )
+    #
+    #     log_theta[j] <- log(ilogit(beta1[method[idx]] +
+    #                                  nimble::inprod(X_p[county[idx], ], beta_p[method[idx],]))) +
+    #       min(0, log_potential_area - log_survey_area_km2[idx])
+    #
+    #     if(j == 1){
+    #       p <- exp(log_theta[1])
+    #     } else {
+    #       p <- exp(log_theta[1] + sum(log(1 - exp(log_theta[1:(j-1)]))))
+    #     }
+    #     swine <- max(y[idx], 1)
+    #     # print(swine)
+    #     nr[j] <- swine / p
+    #
+    #   }
+    #   n_init[i] <- rpois(1, mean(nr))
+    # }
 
     # n_init <- rpois(n_property, property_area*8)
 
@@ -100,7 +100,7 @@ inits <- function(data, constants, dir = NULL){
 
     n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
 
-    buffer <- 1000
+    buffer <- 100
     list(
       log_lambda_1 = log(n_init + buffer),
       beta_p = beta_p,
