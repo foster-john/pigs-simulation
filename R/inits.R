@@ -66,9 +66,7 @@ inits <- function(data, constants, dir = NULL){
     #   }
     #   n_init[i] <- rpois(1, mean(nr))
     # }
-
-    # n_init <- rpois(n_property, property_area*8)
-
+    #
     # a <- phi_mu * psi_phi
     # b <- (1 - phi_mu) * psi_phi
     # mean_lpy <- 1
@@ -100,7 +98,7 @@ inits <- function(data, constants, dir = NULL){
 
     n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
 
-    buffer <- 100
+    buffer <- 10
     list(
       log_lambda_1 = log(n_init + buffer),
       beta_p = beta_p,
