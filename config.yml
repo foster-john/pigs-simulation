@@ -37,4 +37,4 @@ hpc_production:
   dev_dir: "production"
   n_pp: 50
   n_mcmc: 500
-  n_iter: 300000
+  n_iter: 100000
