@@ -40,7 +40,7 @@ run_simulation <- function(config, df, task_id){
     n_rel <- n_method_lookup |>
       count(n, name = "n_sum") |>
       mutate(rel_prop = n_sum / sum(n_sum),
-             n_simulate = ceiling(rel_prop * 200))
+             n_simulate = ceiling(rel_prop * 130))
 
     # -----------------------------------------------------------------
     # 1-method properties ----
