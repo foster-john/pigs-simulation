@@ -24,7 +24,7 @@ start <- Sys.time()
 Sys.setenv(RENV_CONFIG_SANDBOX_ENABLED = FALSE)
 renv::load("/home/john.foster/pigs-simulation/")
 
-config_name <- "dev"
+config_name <- "hpc_test"
 config <- config::get(config = config_name)
 
 library(nimble)
