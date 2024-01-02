@@ -121,6 +121,17 @@ simulate_dm <- function(
            obs_flag = if_else(is.na(take), 0, 1)) |>
     suppressMessages()
 
-  return(all_info)
+   pp_keep <- all_info |>
+    select(PPNum, sum_take) |>
+    distinct() |>
+    mutate(sum_take = if_else(is.na(sum_take), 0, sum_take),
+           cTake = cumsum(sum_take)) |>
+    filter(cTake > 0) |>
+    pull(PPNum)
+
+  condition_first_capture <- all_info |>
+    filter(PPNum %in% pp_keep)
+
+  return(condition_first_capture)
 }
 
