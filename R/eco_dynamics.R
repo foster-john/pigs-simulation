@@ -129,9 +129,14 @@ simulate_dm <- function(
     filter(cTake > 0) |>
     pull(PPNum)
 
-  condition_first_capture <- all_info |>
-    filter(PPNum %in% pp_keep)
+  if(length(pp_keep) == 1){
+    return(NULL) # need at least 2 primary periods for model to work
+  } else {
+    condition_first_capture <- all_info |>
+      filter(PPNum %in% pp_keep)
 
-  return(condition_first_capture)
+    return(condition_first_capture)
+  }
+
 }
 
