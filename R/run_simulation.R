@@ -189,6 +189,7 @@ run_simulation <- function(config, df, task_id){
     n_iter <- config$n_iter
     n_chains <- config$n_chains
 
+    message(constants$n_property, " properties simulated")
     message("Fitting MCMC with ", n_iter, " iterations across ", n_chains, " chains")
 
     source("R/fit_mcmc.R")
