@@ -91,13 +91,18 @@ simulate_dm <- function(
       z <- N[t] - sum(take_t$take)
       assertthat::assert_that(z >= 0,
                               msg = paste("More pigs removed than are alive! Time = ", t))
+    } else {
+      z <- N[t]
     }
 
     # simulate population dynamics
     if(t < n_time){
-      N[t + 1] <- process_model(N[t], zeta, a_phi, b_phi)
+      N[t + 1] <- process_model(z, zeta, a_phi, b_phi)
     }
   }
+
+  zero_take <- sum(take$take, na.rm = TRUE) == 0
+  if(zero_take) return(NULL)
 
   N_tb <- tibble(
     PPNum = time_vec,
@@ -118,5 +123,4 @@ simulate_dm <- function(
 
   return(all_info)
 }
-
 
