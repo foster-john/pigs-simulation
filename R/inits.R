@@ -10,7 +10,7 @@ inits <- function(data, constants, dir = NULL){
       p_mu <- rnorm(3)
       log_gamma <- log(runif(2, 0.1, 2))
       log_rho <- log(
-        c(runif(1, 0.1, 5), runif(1, 2, 200), runif(1, 2, 200), runif(1, 0.75, 1.5), runif(1, 0.75, 1.5))
+        c(runif(1, 0.1, 5), runif(1, 50, 150), runif(1, 50, 150), runif(1, 5, 15), runif(1, 5, 15))
       )
       psi_phi <- runif(1, 2, 4)
       phi_mu <- runif(1, 0.7, 0.8)
