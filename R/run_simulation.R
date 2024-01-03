@@ -174,13 +174,14 @@ run_simulation <- function(config, df, task_id){
     constants <- nimble_data$constants
     data <- nimble_data$data
 
-    custom_samplers <- tribble(
-      ~node,            ~type,
-      "log_nu",         "slice",
-      "phi_mu",         "slice",
-      "psi_phi",        "slice",
-      "log_rho",        "AF_slice"
-    )
+    #custom_samplers <- tribble(
+    #  ~node,            ~type,
+    #  "log_nu",         "slice",
+    #  "phi_mu",         "slice",
+    #  "psi_phi",        "slice",
+    #  "log_rho",        "AF_slice"
+    #)
+    custom_samplers <- NULL
 
     source("R/model_removal_dm.R")
 
