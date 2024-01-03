@@ -26,6 +26,7 @@ inits <- function(data, constants, dir = NULL){
       phi_mu <- jitter(init_mu[grep("phi_mu", names(init_mu), fixed = TRUE)])
       psi_phi <- jitter(init_mu[grep("psi_phi", names(init_mu), fixed = TRUE)])
       log_nu <- jitter(init_mu[grep("log_nu", names(init_mu), fixed = TRUE)])
+      mean_ls <- exp(log_nu)
       log_gamma <- jitter(init_mu[grep("log_gamma[", names(init_mu), fixed = TRUE)])
       log_rho <- jitter(init_mu[grep("log_rho[", names(init_mu), fixed = TRUE)])
     }
