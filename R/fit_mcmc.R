@@ -17,7 +17,8 @@ fit_mcmc <- function(cl, modelCode, data, constants, n_iter, n_chains, custom_sa
   source("R/inits.R")
   for(i in seq_along(cl)){
     set.seed(i)
-    init <- inits(data, constants)
+    init_dir <- "/lustrefs/ceah/feral-swine/simulation/output/test/betaSurvival/density_5/1"
+    init <- inits(data, constants, init_dir)
     clusterExport(cl[i], "init", envir = environment())
   }
 

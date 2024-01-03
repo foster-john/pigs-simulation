@@ -16,15 +16,16 @@ inits <- function(data, constants, dir = NULL){
       phi_mu <- runif(1, 0.7, 0.8)
       mean_ls <- round(runif(1, 5, 8))
     } else {
-      post <- read_rds(file.path(dir, "posterior.rds"))
-      init_mu <- apply(post$samples, 2, mean)
+      burn <- "parameters_burnin.rds"
+      params <- read_rds(file.path(dir, burn))
+      params <- as.matrix(params[[1]])
+      init_mu <- apply(params, 2, mean)
       beta_p <- matrix(jitter(init_mu[grep("beta_p[", names(init_mu), fixed = TRUE)]), constants$n_method, constants$m_p)
       beta1 <- jitter(init_mu[grep("beta1[", names(init_mu), fixed = TRUE)])
       p_mu <- jitter(init_mu[grep("p_mu[", names(init_mu), fixed = TRUE)])
       phi_mu <- jitter(init_mu[grep("phi_mu", names(init_mu), fixed = TRUE)])
       psi_phi <- jitter(init_mu[grep("psi_phi", names(init_mu), fixed = TRUE)])
-      log_mean_ls <- jitter(init_mu[grep("log_mean_ls", names(init_mu), fixed = TRUE)])
-      mean_ls <- exp(log_mean_ls)
+      log_nu <- jitter(init_mu[grep("log_nu", names(init_mu), fixed = TRUE)])
       log_gamma <- jitter(init_mu[grep("log_gamma[", names(init_mu), fixed = TRUE)])
       log_rho <- jitter(init_mu[grep("log_rho[", names(init_mu), fixed = TRUE)])
     }
