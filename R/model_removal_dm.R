@@ -24,7 +24,7 @@ modelCode <- nimbleCode({
 
   # estimate apparent survival
   phi_mu ~ dbeta(phi_mu_a, phi_mu_b)
-  psi_phi ~ dgamma(1, 0.001)
+  psi_phi ~ dgamma(1, 0.1)
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
 
