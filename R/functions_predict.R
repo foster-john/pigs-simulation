@@ -106,17 +106,8 @@ data_posteriors <- function(samples, constants, data){
 
   post <- with(D, {
 
-    xH <- tibble(
-      property = p_property_idx,
-      pp = p_pp_idx
-    ) |>
-      group_by(property, pp) |>
-      mutate(number = cur_group_id()) |>
-      pull(number)
-
     log_potential_area <- matrix(NA, nrow(samples), n_survey)
-    y <- matrix(NA, nrow(samples), n_survey)
-
+    y_pred <- matrix(NA, nrow(samples), n_survey)
 
     pattern <- "(?<!beta_)p\\[\\d*\\]"
     p_detect <- str_detect(colnames(samples), pattern)
@@ -188,12 +179,12 @@ data_posteriors <- function(samples, constants, data){
     }
 
     for(i in 1:n_survey){
-      N <- as.numeric(samples[,paste0("xn[", xH[i], "]")])
-      y[, i] <- rpois(length(N), N * p[,i])
+      N <- as.numeric(samples[,paste0("N[", nH_p[i], "]")])
+      y_pred[, i] <- rpois(length(N), N * p[,i])
     }
 
     list(
-      y = y,
+      y = y_pred,
       p = t(apply(p, 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
       potential_area = t(apply(exp(log_potential_area), 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
       theta = exp(log_theta)

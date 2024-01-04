@@ -103,7 +103,7 @@ inits <- function(data, constants, dir = NULL){
     #
     # n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
 
-    buffer <- 25
+    buffer <- 250
     list(
       log_lambda_1 = log(n_init + buffer),
       beta_p = beta_p,

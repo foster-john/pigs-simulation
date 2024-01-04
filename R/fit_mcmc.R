@@ -45,7 +45,7 @@ fit_mcmc <- function(cl, modelCode, data, constants, n_iter, n_chains, custom_sa
       n <- round(N_model - constants$y_sum[i])
       if(n <= 0){
         print(i)
-        n <- if_else(n == 0, 2, n)
+        n <- dplyr::if_else(n == 0, 2, n)
         Rmodel$N[constants$nH_p[i]] <- N_model + n^2
       }
     }
@@ -59,7 +59,6 @@ fit_mcmc <- function(cl, modelCode, data, constants, n_iter, n_chains, custom_sa
     if(!is.null(monitors_add)){
       mcmcConf$addMonitors(monitors_add)
     }
-
 
     if(!is.null(custom_samplers)){
       for(i in seq_len(nrow(custom_samplers))){
