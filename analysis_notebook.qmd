@@ -28,7 +28,7 @@ library(mgcv)
 
 config <- config::get(config = "default")
 model_dir <- config$model_dir
-analysis_dir <- "../analysis"
+analysis_dir <- "analysis"
 param_residuals_file <- "parameterResidual.rds"
 param_recovery_file <- "parameterRecovery.rds"
 abundance_file <- "abundance.rds"
