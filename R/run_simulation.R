@@ -185,7 +185,7 @@ run_simulation <- function(config, df, task_id){
 
     source("R/model_removal_dm.R")
 
-    monitors_add <- c("xn")
+    monitors_add <- c("N")
 
     n_iter <- config$n_iter
     n_chains <- config$n_chains

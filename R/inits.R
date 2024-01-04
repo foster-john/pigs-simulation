@@ -63,44 +63,47 @@ inits <- function(data, constants, dir = NULL){
     #     }
     #     swine <- max(y[idx], 1)
     #     # print(swine)
-    #     nr[j] <- swine / p
+    #     nr[j] <- (swine + rem[i, j]) / p
     #
     #   }
-    #   n_init[i] <- rpois(1, mean(nr))
-    # }
-    #
-    # a <- phi_mu * psi_phi
-    # b <- (1 - phi_mu) * psi_phi
-    # mean_lpy <- 1
-    # zeta <- mean_lpy / 365 * pp_len * mean_ls
-    # dm <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
-    # N <- S <- R <- Z <- dm
-    # for(i in 1:n_property){
-    #   N[i, all_pp[i, 1]] <- n_init[i]
-    #   for(t in 2:n_time_prop[i]){
-    #     Z[i, t-1] <- N[i, all_pp[i, t-1]]
-    #     S[i, t-1] <- Z[i, t-1] * rbeta(1, a, b)
-    #     R[i, t-1] <- zeta * Z[i, t-1] / 2
-    #     N[i, all_pp[i, t]] <- round(S[i, t-1] + R[i, t-1])
-    #   }
+    #   n_init[i] <- rpois(1, sum(nr))
     # }
 
-    max_n <- tibble(prop = p_property_idx,
-                    pp = p_pp_idx,
-                    y_sum = y_sum,
-                    y = y) |>
-      group_by(prop, pp) |>
-      filter(y_sum == max(y_sum)) |>
-      ungroup()
+    a <- phi_mu * psi_phi
+    b <- (1 - phi_mu) * psi_phi
+    mean_lpy <- 1
+    zeta <- mean_lpy / 365 * pp_len * mean_ls
+    N <- phi <- rep(NA, n_units)
+    n_init <- rep(NA, n_property)
+    for(i in 1:n_property){
+      n_init[i] <- round(exp(log_survey_area_km2[i]) * 5) + sum(rem[i, ], na.rm = TRUE) * 2
+      N[nH[i, 1]] <- n_init[i]
+      for(j in 2:n_time_prop[i]){
+        phi[nH[i, j-1]] <- rbeta(1, a, b)
+        z <- N[nH[i, j-1]] - rem[i, j-1]
+        z <- max(2, z)
+        lambda <- z * zeta / 2 + z * phi[nH[i, j-1]]
 
-    N <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
-    for(i in 1:nrow(max_n)){
-      N[max_n$prop[i], max_n$pp[i]] <- max_n$y_sum[i] + max_n$y[i] + rpois(1, 50)
+        N[nH[i, j]] <- rpois(1, lambda)
+      }
     }
 
-    n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
+    # max_n <- tibble(prop = p_property_idx,
+    #                 pp = p_pp_idx,
+    #                 y_sum = y_sum,
+    #                 y = y) |>
+    #   group_by(prop, pp) |>
+    #   filter(y_sum == max(y_sum)) |>
+    #   ungroup()
+    #
+    # N <- matrix(NA, n_property, max(all_pp, na.rm = TRUE))
+    # for(i in 1:nrow(max_n)){
+    #   N[max_n$prop[i], max_n$pp[i]] <- max_n$y_sum[i] + max_n$y[i] + rpois(1, 50)
+    # }
+    #
+    # n_init <- apply(N, 1, function(x) x[min(which(!is.na(x)))])
 
-    buffer <- 10
+    buffer <- 25
     list(
       log_lambda_1 = log(n_init + buffer),
       beta_p = beta_p,
@@ -111,7 +114,8 @@ inits <- function(data, constants, dir = NULL){
       N = N + buffer,
       log_nu = log(mean_ls),
       log_gamma = log_gamma,
-      log_rho = log_rho
+      log_rho = log_rho,
+      phi = phi
     )
   })
 

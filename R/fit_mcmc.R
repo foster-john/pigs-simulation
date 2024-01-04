@@ -41,12 +41,12 @@ fit_mcmc <- function(cl, modelCode, data, constants, n_iter, n_chains, custom_sa
     # Rmodel$initializeInfo()
 
     for(i in 1:constants$n_survey){
-      N_model <- Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]]
-      n <- round(N_model - data$y_sum[i])
+      N_model <- Rmodel$N[constants$nH_p[i]]
+      n <- round(N_model - constants$y_sum[i])
       if(n <= 0){
         print(i)
         n <- if_else(n == 0, 2, n)
-        Rmodel$N[constants$p_property_idx[i], constants$p_pp_idx[i]] <- N_model + n^2
+        Rmodel$N[constants$nH_p[i]] <- N_model + n^2
       }
     }
 
