@@ -170,7 +170,9 @@ n_method_properties <- function(df, n_properties, n, n_pp){
       pull(property) |>
       unique()
 
-    if(nm >= 4){
+    np <- length(p)
+
+    if(nm >= 4 | np <= 3){
       return_df |>
         filter(property %in% p) |>
         mutate(delta = if_else(delta == 0, sample.int(20, 1), delta))
@@ -311,7 +313,7 @@ n_method_properties <- function(df, n_properties, n, n_pp){
 
 
   ### sample the number of observations and reps, place in properties list
-  pb <- txtProgressBar(max = n_properties, style = 3)
+  pb <- txtProgressBar(max = n_properties, style = 1)
   for(i in seq_len(n_properties)){
     m <- unname(unlist(slice(sample_n_method, i)))
 

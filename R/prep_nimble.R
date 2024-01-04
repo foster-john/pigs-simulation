@@ -22,6 +22,12 @@ prep_nimble <- function(N, take, X){
                 values_from = PPNum) |>
     select(-property)
 
+  nH <- N_timestep |>
+    mutate(n_id = 1:n()) |>
+    select(-PPNum) |>
+    pivot_wider(names_from = timestep,
+                values_from = n_id) |>
+    select(-property)
 
   # Generate start and end indices for previous surveys
   take_timestep <- take |>
@@ -36,7 +42,7 @@ prep_nimble <- function(N, take, X){
   take$start <- 0
   take$end <- 0
 
-  pb <- txtProgressBar(max = nrow(take), style = 3)
+  pb <- txtProgressBar(max = nrow(take), style = 1)
   for (i in 1:nrow(take)) {
     if (take$order[i] > 1) {
       idx <- which(take$county == take$county[i] &
@@ -69,6 +75,14 @@ prep_nimble <- function(N, take, X){
                 values_from = sum_take) |>
     select(-property)
 
+  tH <- take |>
+    select(property, PPNum)
+
+  nH_p <- N |>
+    select(property, PPNum, n_id) |>
+    right_join(tH) |>
+    pull(n_id)
+
   # mean litters per year from VerCauteren et al. 2019 pg 64
   data_litters_per_year <- c(1, 2, 0.86, 1, 2.28, 2.9, 0.49, 0.85, 1.57)
 
@@ -91,6 +105,8 @@ prep_nimble <- function(N, take, X){
     n_units = nrow(N),
     n_time_prop = n_time_prop,
     all_pp = as.matrix(all_pp_wide),
+    nH = as.matrix(nH),
+    nH_p = nH_p,
     log_pi = log(pi),
     m_p = ncol(X),
     first_survey = which(take$order == 1),
@@ -105,15 +121,15 @@ prep_nimble <- function(N, take, X){
     pp_x = N$PPNum,
     pp_len = 28,
     phi_mu_a = 3.233689,
-    phi_mu_b = 0.1996036
+    phi_mu_b = 0.1996036,
+    y_sum = y_sum$ysum,
+    rem = as.matrix(removed_timestep)
   )
 
   data <- list(
     y = take$take,
     # K = data_litters_per_year,
     J = data_litter_size,
-    y_sum = y_sum$ysum,
-    rem = as.matrix(removed_timestep),
     X_p = X,
     effort_per = take$effort_per,
     log_effort_per = log(take$effort_per),
