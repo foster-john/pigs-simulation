@@ -105,15 +105,15 @@ prep_nimble <- function(N, take, X){
     pp_x = N$PPNum,
     pp_len = 28,
     phi_mu_a = 3.233689,
-    phi_mu_b = 0.1996036
+    phi_mu_b = 0.1996036,
+    y_sum = y_sum$ysum,
+    rem = as.matrix(removed_timestep)
   )
 
   data <- list(
     y = take$take,
     # K = data_litters_per_year,
     J = data_litter_size,
-    y_sum = y_sum$ysum,
-    rem = as.matrix(removed_timestep),
     X_p = X,
     effort_per = take$effort_per,
     log_effort_per = log(take$effort_per),
