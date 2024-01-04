@@ -375,7 +375,7 @@ abundance <- all_N |>
 
 get_xn <- function(df, H){
   df |>
-    select_pivot_longer("xn[") |>
+    select_pivot_longer("N[") |>
     filter(!is.na(value)) |>
     mutate(n_id = as.numeric(str_extract(node, "(?<=\\[)\\d*"))) |>
     left_join(H) |>
