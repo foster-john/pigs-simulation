@@ -161,7 +161,9 @@ data_posteriors <- function(samples, constants, data){
 
         log_theta[, i] <- log(
           ilogit(beta1[, M] +
-                   inprod(X_p[county[i], ], beta_p[, beta_p_nodes])
+                   X_p[county[i], 1] * beta_p[, beta_p_nodes[1]] +
+                   X_p[county[i], 2] * beta_p[, beta_p_nodes[2]] +
+                   X_p[county[i], 3] * beta_p[, beta_p_nodes[3]]
           )
         ) +
           pmin(0, log_potential_area[, i] - log_survey_area_km2[i])
