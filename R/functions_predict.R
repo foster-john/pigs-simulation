@@ -100,38 +100,32 @@ data_posteriors <- function(samples, constants, data){
 
   require(dplyr)
   require(nimble)
+  require(stringr)
 
   D <- append(constants, data)
 
   post <- with(D, {
 
-    xH <- tibble(
-      property = p_property_idx,
-      pp = p_pp_idx
-    ) |>
-      group_by(property, pp) |>
-      mutate(number = cur_group_id()) |>
-      pull(number)
-
     log_potential_area <- matrix(NA, nrow(samples), n_survey)
-    y <- matrix(NA, nrow(samples), n_survey)
-    log_theta <- matrix(NA, nrow(samples), n_survey)
+    y_pred <- matrix(NA, nrow(samples), n_survey)
 
     pattern <- "(?<!beta_)p\\[\\d*\\]"
     p_detect <- str_detect(colnames(samples), pattern)
     if(any(p_detect)){
       calc_p <- FALSE
       p <- samples[,which(p_detect)]
+      log_theta <- NA
     } else {
       calc_p <- TRUE
       p <- matrix(NA, nrow(samples), n_survey)
+      log_theta <- matrix(NA, nrow(samples), n_survey)
     }
 
-    log_rho <- samples[, grep("log_rho", colnames(samples))]
-    log_gamma <- samples[, grep("log_gamma", colnames(samples))]
-    p_unique <- ilogit(samples[, grep("p_mu", colnames(samples))])
-    beta1 <- samples[, grep("beta1", colnames(samples))]
-    beta_p <- samples[, grep("beta_p", colnames(samples))]
+    log_rho <- as.matrix(samples[, grep("log_rho", colnames(samples))])
+    log_gamma <- as.matrix(samples[, grep("log_gamma", colnames(samples))])
+    p_unique <- as.matrix(ilogit(samples[, grep("p_mu", colnames(samples))]))
+    beta1 <- as.matrix(samples[, grep("beta1", colnames(samples))])
+    beta_p <- as.matrix(samples[, grep("beta_p", colnames(samples))])
 
     for(i in 1:n_survey){
 
@@ -156,36 +150,43 @@ data_posteriors <- function(samples, constants, data){
           n_trap_m1 = n_trap_m1[i]
         )
       }
+    }
 
-      if(calc_p){
+    if(calc_p){
 
-        pb <- txtProgressBar(max = nrow(samples), style = 3)
-        for(m in 1:nrow(samples)){
-          M <- samples[m,]
+      for(i in 1:n_survey){
+        M <- method[i]
 
-          # base probability of capture given an individual is the first survey
-          # TODO fix to work with beta1 and beta_p by method if p is not saved from mcmc
-          log_theta[m, ] <- log(ilogit(X_p %*% M[grep("beta_p", names(M))])) +
-            pmin(0, log_potential_area[m, ] - log_survey_area_km2[i])
+        beta_p_nodes <- paste0("beta_p[", M, ", ", 1:m_p, "]")
 
-          # the probability an individual is captured on the first survey
-          p[m, first_survey] <- exp(log_theta[m, first_survey])
-
-          # the probability an individual is captured after the first survey
-          for(i in 1:n_not_first_survey){
-            p[m, not_first_survey[i]] <- exp(log_theta[m, start[not_first_survey[i]]] +
-                                               sum(log(1 - exp(log_theta[m, start[not_first_survey[i]]:end[not_first_survey[i]]]))))
-          }
-          setTxtProgressBar(pb, m)
-        }
-        close(pb)
+        log_theta[, i] <- log(
+          ilogit(beta1[, M] +
+                   X_p[county[i], 1] * beta_p[, beta_p_nodes[1]] +
+                   X_p[county[i], 2] * beta_p[, beta_p_nodes[2]] +
+                   X_p[county[i], 3] * beta_p[, beta_p_nodes[3]]
+          )
+        ) +
+          pmin(0, log_potential_area[, i] - log_survey_area_km2[i])
       }
-      N <- as.numeric(samples[,paste0("xn[", xH[i], "]")])
-      y[, i] <- rpois(length(N), N * p[,i])
+
+      # the probability an individual is captured on the first survey
+      p[, first_survey] <- exp(log_theta[, first_survey])
+
+      # the probability an individual is captured after the first survey
+      for(i in 1:n_not_first_survey){
+        p[, not_first_survey[i]] <- exp(log_theta[, start[not_first_survey[i]]] +
+                                           sum(log(1 - exp(log_theta[, start[not_first_survey[i]]:end[not_first_survey[i]]]))))
+      }
+
+    }
+
+    for(i in 1:n_survey){
+      N <- as.numeric(samples[,paste0("N[", nH_p[i], "]")])
+      y_pred[, i] <- rpois(length(N), N * p[,i])
     }
 
     list(
-      y = y,
+      y = y_pred,
       p = t(apply(p, 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
       potential_area = t(apply(exp(log_potential_area), 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
       theta = exp(log_theta)

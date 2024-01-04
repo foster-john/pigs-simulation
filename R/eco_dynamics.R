@@ -9,8 +9,12 @@ simulate_dm <- function(
     X,
     beta_p,
     start_density,
-    method_lookup
+    method_lookup,
+    effort_csv
 ){
+
+  require(dplyr)
+  require(tidyr)
 
   # mean litters per year from VerCauteren et al. 2019 pg 64
   data_litters_per_year <- c(1, 2, 0.86, 1, 2.28, 2.9, 0.49, 0.85, 1.57)
@@ -41,8 +45,7 @@ simulate_dm <- function(
   p_unique <- method_lookup$p_unique
 
   source("R/functions_removal.R")
-  data_dir <- config::get("data_dir")
-  effort_data <- read_csv(file.path(data_dir, "insitu/effort_data.csv")) |>
+  effort_data <- readr::read_csv(effort_csv) |>
     suppressMessages()
 
   removal_effort <- property_data$effort
@@ -60,7 +63,10 @@ simulate_dm <- function(
     N_spin <- process_model(N_spin, zeta, a_phi, b_phi)
   }
 
-  # if(N_spin == 0) # TODO write exit from property
+  extinct <- N_spin == 0
+  too_dense <- N_spin / survey_area > 10
+
+  if(extinct | too_dense) return(NULL)
 
   N <- numeric(n_time)
   N[1] <- N_spin
@@ -95,6 +101,9 @@ simulate_dm <- function(
     }
   }
 
+  zero_take <- sum(take$take, na.rm = TRUE) == 0
+  if(zero_take) return(NULL)
+
   N_tb <- tibble(
     PPNum = time_vec,
     N = N
@@ -112,7 +121,22 @@ simulate_dm <- function(
            obs_flag = if_else(is.na(take), 0, 1)) |>
     suppressMessages()
 
-  return(all_info)
-}
+   pp_keep <- all_info |>
+    select(PPNum, sum_take) |>
+    distinct() |>
+    mutate(sum_take = if_else(is.na(sum_take), 0, sum_take),
+           cTake = cumsum(sum_take)) |>
+    filter(cTake > 0) |>
+    pull(PPNum)
 
+  if(length(pp_keep) == 1){
+    return(NULL) # need at least 2 primary periods for model to work
+  } else {
+    condition_first_capture <- all_info |>
+      filter(PPNum %in% pp_keep)
+
+    return(condition_first_capture)
+  }
+
+}
 

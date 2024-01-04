@@ -24,7 +24,7 @@ modelCode <- nimbleCode({
 
   # estimate apparent survival
   phi_mu ~ dbeta(phi_mu_a, phi_mu_b)
-  psi_phi ~ dgamma(1, 0.001)
+  psi_phi ~ dgamma(1, 0.1)
   a_phi <- phi_mu * psi_phi
   b_phi <- (1 - phi_mu) * psi_phi
 
@@ -32,7 +32,8 @@ modelCode <- nimbleCode({
   log(nu) <- log_nu
 
   ## convert to expected number of pigs per primary period
-  zeta <- nu * pp_len / 365
+  log_zeta <- log(pp_len) + log_nu - log(365)
+  log(zeta) <- log_zeta
   for(i in 1:n_ls){
     J[i] ~ dpois(nu)
   }
@@ -57,7 +58,7 @@ modelCode <- nimbleCode({
       min(0, log_potential_area[i] - log_survey_area_km2[i])
 
     # likelihood
-    y[i] ~ dpois(p[i] * (N[p_property_idx[i], p_pp_idx[i]] - y_sum[i]))
+    y[i] ~ dpois(p[i] * (N[nH_p[i]] - y_sum[i]))
 
   }
 
@@ -75,26 +76,25 @@ modelCode <- nimbleCode({
   for(i in 1:n_property){
 
     log_lambda_1[i] ~ dunif(0, 10)
-    log(N[i, all_pp[i, 1]]) <- log_lambda_1[i]
+    # log(N[i, all_pp[i, 1]]) <- log_lambda_1[i]
+    log(N[nH[i, 1]]) <- log_lambda_1[i]
 
     # population growth across time steps
     for(j in 2:n_time_prop[i]){ # loop through every PP, including missing ones
 
-      Z[i, j-1] <- N[i, all_pp[i, j-1]] #- rem[i, j-1]
+      lambda[nH[i, j-1]] <- (N[nH[i, j-1]] - rem[i, j-1]) * zeta / 2 +
+        (N[nH[i, j-1]] - rem[i, j-1]) * phi[nH[i, j-1]]
 
-      lambda[i, j-1] <- Z[i, j-1] * zeta / 2 + Z[i, j-1] * phi[i, j-1]
-
-      N[i, all_pp[i, j]] ~ dpois(lambda[i, j-1])
-      phi[i, j-1] ~ dbeta(a_phi, b_phi)
+      N[nH[i, j]] ~ dpois(lambda[nH[i, j-1]])
+      phi[nH[i, j-1]] ~ dbeta(a_phi, b_phi)
 
     }
 
   }
 
-
-  # for easier monitoring of abundance - long format
-  for(i in 1:n_units){
-    xn[i] <- N[property_x[i], pp_x[i]]
-  }
+  # # for easier monitoring of abundance - long format
+  # for(i in 1:n_units){
+  #   xn[i] <- N[property_x[i], pp_x[i]]
+  # }
 
 })

@@ -137,7 +137,7 @@ one_method_properties <- function(df, n_properties, n_pp){
   }
 
   ### sample the number of observations and reps, place in properties list
-  pb <- txtProgressBar(min = 1, max = n_properties, style = 3)
+  pb <- txtProgressBar(min = 1, max = n_properties, style = 1)
   for(i in seq_len(n_properties)){
     sample_occasions <- get_sample_occasions(one_method_return, sample_one_method[i], start[i], n_pp)
     n_reps <- get_reps(n_reps_single_method, sample_one_method[i], length(sample_occasions))
