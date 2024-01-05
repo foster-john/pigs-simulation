@@ -14,24 +14,26 @@ library(readr)
 library(coda)
 
 
-config_name <- "hpc_production"
+config_name <- "dev"
 config <- config::get(config = config_name)
 
-top_dir <- config$top_dir
-out_dir <- config$out_dir
-analysis_dir <- config$analysis_dir
-dev_dir <- config$dev_dir
-model_dir <- config$model_dir
-project_dir <- config$project_dir
-start_density <- config$start_density
-density_dir <- paste0("density_", start_density)
+# top_dir <- config$top_dir
+# out_dir <- config$out_dir
+# analysis_dir <- config$analysis_dir
+# dev_dir <- config$dev_dir
+# model_dir <- config$model_dir
+# project_dir <- config$project_dir
+# start_density <- config$start_density
+# density_dir <- paste0("density_", start_density)
 
-path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
+# path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
+path <- "out/hpc/density_5"
 
 density_tasks <- list.files(path)
+
 message("Tasks to collate ", length(density_tasks))
 
-density_tasks <- 1:20
+# density_tasks <- 1:20
 print(density_tasks)
 
 all_samples <- tibble()
@@ -127,10 +129,10 @@ for(i in seq_along(density_tasks)){
 
   rds <- read_rds(file.path(path, task_id, "simulation_data.rds"))
 
-  bad_mcmc <- rds$bad_mcmc | any(rds$psrf > 1.4)
+  bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,1] > 1.2)
   converged <- rds$converged
 
-  # if(bad_mcmc) next
+  if(bad_mcmc) next
 
   start_density <- rds$start_density
 
@@ -346,7 +348,7 @@ recov_phi <- function(df, known, psrf){
 }
 
 resid_phi <- function(df, known){
-  phi_residual <- phi_long |>
+  phi_residual <- df |>
     mutate(actual = known) |>
     mutate(value = value - actual) |>
     group_by(node, start_density) |>
@@ -373,6 +375,8 @@ write_rds(residual_list, file.path(path, "parameterResidual.rds"))
 abundance <- all_N |>
   rename(abundance = N)
 
+
+
 get_xn <- function(df, H){
   df |>
     select_pivot_longer("N[") |>
@@ -383,43 +387,74 @@ get_xn <- function(df, H){
     mutate(estimated_density = value / property_area)
 }
 
-xn_posterior <- all_samples |>
-  get_xn(abundance) |>
-  group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
+xn <- all_samples |>
+  get_xn(abundance)
+
+vals <- c("value", "abundance", "density", "estimated_density")
+
+n_attributes <- xn |>
+  select(-all_of(vals)) |>
+  distinct()
+
+xn_posterior <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property, PPNum) |>
   summarise(low_abundance = quantile(value, 0.025),
             med_abundance = quantile(value, 0.5),
             high_abundance = quantile(value, 0.975),
-            var_abundnace = var(value),
+            var_abundance = var(value),
             low_density = quantile(estimated_density, 0.025),
             med_density = quantile(estimated_density, 0.5),
             high_density = quantile(estimated_density, 0.975),
             var_density = var(estimated_density)) |>
-  ungroup()
+  ungroup() |>
+  left_join(n_attributes)
 
 message("\nposterior abundance done\n")
 
-xn_error <- all_samples |>
-  get_xn(abundance) |>
-  group_by(node, n_id, county, property, PPNum, abundance, simulation, property_area, density, start_density, obs_flag) |>
-  summarise(mae_abundance = mean(abs(value - abundance)),
-            mae_density = mean(abs(estimated_density - density)),
-            mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+error_by_observation <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property, PPNum) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
             mse_abundance = mean((value - abundance)^2),
             mse_density = mean((estimated_density - density)^2),
-            rmse_abundance = (sqrt(mse_abundance)),
-            rmse_density = (sqrt(mse_density))) |>
+            rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density),
+            nm_rmse_abundance = rmse_abundance / (abundance + 1),
+            nm_rmse_density = rmse_density / (density + 0.1)) |>
   ungroup() |>
   arrange(simulation, property, PPNum) |>
   group_by(simulation, property) |>
   mutate(delta = PPNum - lag(PPNum)) |>
+  ungroup() |>
+  left_join(n_attributes)
+
+error_by_simulation <- xn |>
+  select(simulation, all_of(vals)) |>
+  group_by(simulation) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density),
+            nm_rmse_abundance = rmse_abundance / mean(abundance),
+            nm_rmse_density = rmse_density / mean(density),
+            ns_rmse_abundance = rmse_abundance / sd(abundance),
+            ns_rmse_density = rmse_density / sd(density),
+            sd_ratio_abundance = sd(value) / sd(abundance),
+            sd_ratio_density = sd(estimated_density) / sd(density)) |>
   ungroup()
 
 abundance_list <- list(
   abundance_summaries = xn_posterior,
-  abundance_metrics = xn_error
+  error_by_observation = error_by_observation,
+  error_by_simulation = error_by_simulation
 )
 
 write_rds(abundance_list, file.path(path, "abundance.rds"))
@@ -434,27 +469,48 @@ get_post_take <- function(df, H){
     left_join(H)
 }
 
-take_summaries <- all_y |>
-  get_post_take(all_take) |>
+yy <- all_y |>
+  get_post_take(all_take)
+
+take_summaries <- yy |>
   group_by(simulation, p_id, start_density) |>
   my_summary() |>
   ungroup() |>
   left_join(all_take)
 
-take_metrics <- all_y |>
-  get_post_take(all_take) |>
+take_calc <- function(df){
+  df |>
+    summarise(mae = mean(abs(value - take)),
+              mpe = mean(abs((value+1) - (take+1))/(take+1))*100,
+              mbias = mean(value - take),
+              mse = mean((value - take)^2),
+              rmse = sqrt(mse),
+              nm_rmse = rmse / mean(take),
+              sd_ratio = sd(value) / sd(take))
+}
+
+error_by_observation <- yy |>
   group_by(simulation, p_id, start_density) |>
-  summarise(mae_abundance = mean(abs(value - take)),
-            mpe_abundance = mean(abs((value+1) - (take+1))/(take+1))*100,
-            mbias_abundance = mean(value - take),
-            mse_abundance = mean((value - take)^2),
-            rmse_abundance = (sqrt(mse_abundance))) |>
+  take_calc() |>
   ungroup() |>
+  select(-nm_rmse, -sd_ratio) |>
   left_join(all_take)
+
+error_by_simulation <- yy |>
+  group_by(simulation) |>
+  take_calc() |>
+  ungroup()
+
+error_by_simulation_method <- yy |>
+  group_by(simulation, method) |>
+  take_calc() |>
+  ungroup()
 
 take_list <- list(
   take_summaries = take_summaries,
-  take_metrics = take_metrics
+  error_by_observation = error_by_observation,
+  error_by_simulation = error_by_simulation,
+  error_by_simulation_method = error_by_simulation_method
 )
 write_rds(take_list, file.path(path, "take.rds"))
 message("\nposterior take done\n")
