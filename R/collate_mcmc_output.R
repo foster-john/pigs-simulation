@@ -240,8 +240,6 @@ message("\ncapture covariates done\n")
 
 ## gamma ------
 
-all_methods
-
 gH <- all_methods |>
   select(idx, gamma, method, simulation) |>
   filter(method %in% c("Snares", "Traps")) |>
@@ -373,6 +371,7 @@ message("\nsurvival done\n")
 
 write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
 write_rds(residual_list, file.path(path, "parameterResidual.rds"))
+write_rds(all_methods, file.path(path, "method_parameter_lookup.rds"))
 
 ## abundance ------
 abundance <- all_N |>
