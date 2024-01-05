@@ -14,20 +14,23 @@ library(readr)
 library(coda)
 
 
-config_name <- "dev"
+config_name <- "hpc_production"
 config <- config::get(config = config_name)
 
-# top_dir <- config$top_dir
-# out_dir <- config$out_dir
-# analysis_dir <- config$analysis_dir
-# dev_dir <- config$dev_dir
-# model_dir <- config$model_dir
-# project_dir <- config$project_dir
-# start_density <- config$start_density
-# density_dir <- paste0("density_", start_density)
+start_density <- config$start_density
+start_density <- 5
 
-# path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
-path <- "out/hpc/density_5"
+top_dir <- config$top_dir
+out_dir <- config$out_dir
+analysis_dir <- config$analysis_dir
+dev_dir <- config$dev_dir
+model_dir <- config$model_dir
+project_dir <- config$project_dir
+
+density_dir <- paste0("density_", start_density)
+
+path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
+# path <- "out/hpc/density_5"
 
 density_tasks <- list.files(path)
 
