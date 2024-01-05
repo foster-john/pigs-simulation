@@ -426,8 +426,8 @@ error_by_observation <- xn |>
             mse_density = mean((estimated_density - density)^2),
             rmse_abundance = sqrt(mse_abundance),
             rmse_density = sqrt(mse_density),
-            nm_rmse_abundance = rmse_abundance / (abundance + 1),
-            nm_rmse_density = rmse_density / (density + 0.1)) |>
+            nm_rmse_abundance = rmse_abundance / mean(abundance),
+            nm_rmse_density = rmse_density / mean(density)) |>
   ungroup() |>
   arrange(simulation, property, PPNum) |>
   group_by(simulation, property) |>
