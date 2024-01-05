@@ -395,7 +395,7 @@ xn <- all_samples |>
 vals <- c("abundance", "density", "value", "estimated_density")
 
 n_attributes <- xn |>
-  select(-abundance, -density) |>
+  select(-value, -estimated_density) |>
   distinct()
 
 abundance_summaries <- xn |>
