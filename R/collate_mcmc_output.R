@@ -371,7 +371,6 @@ residual_list$psi_phi <- resid_phi(psi_phi_long, actual)
 
 message("\nsurvival done\n")
 
-recovery_list
 write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
 write_rds(residual_list, file.path(path, "parameterResidual.rds"))
 
@@ -461,15 +460,10 @@ abundance_list <- list(
   error_by_simulation = error_by_simulation
 )
 
-write_csv(xn_posterior, file.path(path, "abundance_summaries.csv"))
-write_csv(error_by_observation, file.path(path, "abundance_error_by_observation.csv"))
-write_csv(error_by_simulation, file.path(path, "abundance_error_by_simulation.csv"))
-
 write_rds(xn_posterior, file.path(path, "abundance_summaries.rds"))
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
 write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
 
-write_rds(abundance_list, file.path(path, "abundance.rds"))
 message("\nabundance metrics done\n")
 
 get_post_take <- function(df, H){
