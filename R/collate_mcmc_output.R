@@ -132,7 +132,7 @@ for(i in seq_along(density_tasks)){
 
   rds <- read_rds(file.path(path, task_id, "simulation_data.rds"))
 
-  bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,2] > 1.2)
+  bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,2] >= 1.2)
   converged <- rds$converged
 
   if(bad_mcmc) next
@@ -395,7 +395,7 @@ xn <- all_samples |>
 vals <- c("abundance", "density", "value", "estimated_density")
 
 n_attributes <- xn |>
-  select(-all_of(vals[-c(1, 2)])) |>
+  select(-abundance, -density) |>
   distinct()
 
 abundance_summaries <- xn |>
