@@ -399,7 +399,7 @@ n_attributes <- xn |>
   select(-all_of(vals)) |>
   distinct()
 
-xn_posterior <- xn |>
+abundance_summaries <- xn |>
   select(simulation, property, PPNum, all_of(vals)) |>
   group_by(simulation, property, PPNum) |>
   summarise(low_abundance = quantile(value, 0.025),
@@ -413,6 +413,7 @@ xn_posterior <- xn |>
   ungroup() |>
   left_join(n_attributes)
 
+write_rds(abundance_summaries, file.path(path, "abundance_summaries.rds"))
 message("\nposterior abundance done\n")
 
 error_by_observation <- xn |>
@@ -435,6 +436,9 @@ error_by_observation <- xn |>
   ungroup() |>
   left_join(n_attributes)
 
+write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
+message("\nabundance error by observation done\n")
+
 error_by_simulation <- xn |>
   select(simulation, all_of(vals)) |>
   group_by(simulation) |>
@@ -454,17 +458,10 @@ error_by_simulation <- xn |>
             sd_ratio_density = sd(estimated_density) / sd(density)) |>
   ungroup()
 
-abundance_list <- list(
-  abundance_summaries = xn_posterior,
-  error_by_observation = error_by_observation,
-  error_by_simulation = error_by_simulation
-)
 
-write_rds(xn_posterior, file.path(path, "abundance_summaries.rds"))
-write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
 write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
+message("\nabundance error by simulation done\n")
 
-message("\nabundance metrics done\n")
 
 get_post_take <- function(df, H){
   df |>
@@ -484,6 +481,9 @@ take_summaries <- yy |>
   ungroup() |>
   left_join(all_take)
 
+write_rds(take_summaries, file.path(path, "take_summaries.rds"))
+message("\nposterior take error by observation done\n")
+
 take_calc <- function(df){
   df |>
     summarise(mae = mean(abs(value - take)),
@@ -502,22 +502,23 @@ error_by_observation <- yy |>
   select(-nm_rmse, -sd_ratio) |>
   left_join(all_take)
 
+write_rds(error_by_observation, file.path(path, "take_error_by_observation.rds"))
+message("\nposterior take error by observation done\n")
+
 error_by_simulation <- yy |>
   group_by(simulation) |>
   take_calc() |>
   ungroup()
+
+write_rds(error_by_simulation, file.path(path, "take_error_by_simulation.rds"))
+message("\nposterior take error by observation done\n")
 
 error_by_simulation_method <- yy |>
   group_by(simulation, method) |>
   take_calc() |>
   ungroup()
 
-take_list <- list(
-  take_summaries = take_summaries,
-  error_by_observation = error_by_observation,
-  error_by_simulation = error_by_simulation,
-  error_by_simulation_method = error_by_simulation_method
-)
-write_rds(take_list, file.path(path, "take.rds"))
-message("\nposterior take done\n")
+write_rds(error_by_simulation_method, file.path(path, "take_error_by_simulation_method.rds"))
+message("\nposterior take error by simulation method done\n")
+
 
