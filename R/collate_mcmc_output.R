@@ -392,10 +392,10 @@ get_xn <- function(df, H){
 xn <- all_samples |>
   get_xn(abundance)
 
-vals <- c("value", "abundance", "density", "estimated_density")
+vals <- c("abundance", "density", "value", "estimated_density")
 
 n_attributes <- xn |>
-  select(-all_of(vals)) |>
+  select(-all_of(vals[-c(1, 2)])) |>
   distinct()
 
 abundance_summaries <- xn |>
