@@ -130,7 +130,13 @@ for(i in seq_along(density_tasks)){
 
   task_id <- density_tasks[i]
 
-  rds <- read_rds(file.path(path, task_id, "simulation_data.rds"))
+  rds_file <- file.path(path, task_id, "simulation_data.rds")
+
+  if(file.exists(rds_file)){
+    rds <- read_rds(rds_file)
+  } else {
+    next
+  }
 
   bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,1] >= 1.2)
   converged <- rds$converged
