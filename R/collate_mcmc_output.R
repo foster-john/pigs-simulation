@@ -46,6 +46,8 @@ all_beta_p <- tibble()
 all_methods <- tibble()
 all_y <- tibble()
 all_area <- tibble()
+all_theta <- tibble()
+all_p <- tibble()
 all_psrf <- tibble()
 
 add_ids <- function(df, task_id, s_density){
@@ -69,19 +71,20 @@ bind_y <- function(all_bind, ls, t_id, dens){
   bind_rows(all_bind, y_pred)
 }
 
-bind_pot_area <- function(all_bind, ls, t_id, dens){
-  pot_area <- ls$posterior_potential_area
-  pot_area <- as_tibble(pot_area) |>
-    add_ids(t_id, dens) |>
-    mutate(p_id = 1:n())
-  bind_rows(all_bind, pot_area)
-}
-
 bind_take <- function(all_bind, ls, t_id, dens){
   take <- ls$take |>
     add_ids(t_id, dens) |>
     mutate(p_id = 1:n())
   bind_rows(all_bind, take)
+}
+
+bind_post_summaries <- function(all_bind, node, ls, t_id, dens){
+  df <- ls[[node]]
+  tb <- as_tibble(df) |>
+    add_ids(t_id, dens) |>
+    mutate(p_id = 1:n(),
+           parameter = node)
+  bind_rows(all_bind, tb)
 }
 
 bind_N <- function(all_bind, ls, t_id, dens){
@@ -147,7 +150,9 @@ for(i in seq_along(density_tasks)){
 
   all_samples <- bind_samples(all_samples, rds, task_id, start_density)
   all_y <- bind_y(all_y, rds, task_id, start_density)
-  all_area <- bind_pot_area(all_area, rds, task_id, start_density)
+  all_area <- bind_post_summaries(all_area, "posterior_potential_area", rds, task_id, start_density)
+  all_theta <- bind_post_summaries(all_theta, "posterior_theta", rds, task_id, start_density)
+  all_p <- bind_post_summaries(all_p, "posterior_p", rds, task_id, start_density)
   all_take <- bind_take(all_take, rds, task_id, start_density)
   all_N <- bind_N(all_N, rds, task_id, start_density)
   all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
@@ -157,6 +162,21 @@ for(i in seq_along(density_tasks)){
   setTxtProgressBar(pb, i)
 }
 close(pb)
+
+
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
+if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
+
+write_rds(all_methods, file.path(path, "method_parameter_lookup.rds"))
+
+data_model_summaries <- list(
+  theta = all_theta,
+  potential_area = all_area,
+  p = all_p
+)
+
+write_rds(data_model_summaries, file.path(path, "data_model_summaries.rds"))
+message("\ndata model summaries done\n")
 
 select_pivot_longer <- function(df, node){
   df |>
@@ -175,10 +195,6 @@ my_summary <- function(df){
               med = quantile(value, 0.5),
               high = quantile(value, 0.975))
 }
-
-
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
-if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 
 recovery_list <- list()
@@ -377,7 +393,6 @@ message("\nsurvival done\n")
 
 write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
 write_rds(residual_list, file.path(path, "parameterResidual.rds"))
-write_rds(all_methods, file.path(path, "method_parameter_lookup.rds"))
 
 ## abundance ------
 abundance <- all_N |>
