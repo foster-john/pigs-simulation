@@ -18,11 +18,11 @@ config_name <- "hpc_production"
 config <- config::get(config = config_name)
 
 start_vec <-
-  c(0.3,
-    1.475,
-    2.65,
-    3.825,
-    5)
+  c("0.3",
+    "1.475",
+    "2.65",
+    "3.825",
+    "5")
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- args[1]
