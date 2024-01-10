@@ -469,7 +469,7 @@ write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.
 message("\nabundance error by observation done\n")
 
 error_by_simulation <- xn |>
-  select(simulation, all_of(vals)) |>
+  select(simulation, start_density, all_of(vals)) |>
   group_by(simulation, start_density) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
@@ -543,7 +543,7 @@ write_rds(error_by_simulation, file.path(path, "take_error_by_simulation.rds"))
 message("\nposterior take error by observation done\n")
 
 error_by_simulation_method <- yy |>
-  group_by(simulation, method) |>
+  group_by(simulation, start_density, method) |>
   take_calc() |>
   ungroup()
 
