@@ -18,7 +18,7 @@ config_name <- "hpc_production"
 config <- config::get(config = config_name)
 
 start_density <- config$start_density
-start_density <- 1.475
+start_density <- 0.3
 
 top_dir <- config$top_dir
 out_dir <- config$out_dir
