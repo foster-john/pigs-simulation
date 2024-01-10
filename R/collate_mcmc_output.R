@@ -25,7 +25,7 @@ start_vec <-
     "5")
 
 args <- commandArgs(trailingOnly = TRUE)
-task_id <- args[1]
+task_id <- as.numeric(args[1])
 
 start_density <- start_vec[task_id]
 
