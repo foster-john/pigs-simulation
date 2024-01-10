@@ -246,6 +246,7 @@ run_simulation <- function(config, df, task_id){
       posterior_take = post$y,
       posterior_p = post$p,
       posterior_potential_area = post$potential_area,
+      posterior_theta = post$theta,
       take = take,
       N = N,
       method_lookup = method_lookup,
