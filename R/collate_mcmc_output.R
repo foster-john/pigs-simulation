@@ -17,11 +17,17 @@ library(coda)
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
 
-start_density <- 0.3
-# start_density <- 1.475
-# start_density <- 2.65
-# start_density <- 3.825
-# start_density <- 5
+start_vec <-
+  c(0.3,
+    1.475,
+    2.65,
+    3.825,
+    5)
+
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- args[1]
+
+start_density <- start_vec[task_id]
 
 top_dir <- config$top_dir
 out_dir <- config$out_dir
