@@ -1,10 +1,10 @@
 default:
   model_dir: "betaSurvival"
   # start_density: 0.3
-  # start_density: 1.475
+  start_density: 1.475
   # start_density: 2.65
   # start_density: 3.825
-  start_density: 5
+  # start_density: 5
   phi_mu: 0.78
   psi_phi: 5
   max_counties: 15
@@ -35,6 +35,6 @@ hpc_test:
 hpc_production:
   inherits: hpc_test
   dev_dir: "production"
-  n_pp: 50
-  n_mcmc: 500
-  n_iter: 200000
+  n_pp: 40
+  n_mcmc: 1000
+  n_iter: 300000
