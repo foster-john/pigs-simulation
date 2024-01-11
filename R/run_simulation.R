@@ -106,13 +106,13 @@ run_simulation <- function(config, df, task_id){
     method_lookup <- tibble(
       idx = 1:5,
       method = c("Firearms", "Fixed wing", "Helicopter", "Snares", "Traps"),
-      p_unique = c(runif(1), 0, 0, runif(2)),
-      rho = c(runif(1, 0.01, 5), # firearms; p_mu[1]
+      p_unique = c(NA, NA, NA, runif(2)),
+      rho = c(runif(1, 0.01, 5), # firearms
 	      runif(1, 1, 200),   # fixed wing
               runif(1, 1, 200),   # helicopter
-              runif(1, 0.1, 15),  # snare; gamma[1], p_mu[2]
-              runif(1, 0.1, 15)), # traps; gamma[2], p_mu[3]
-      gamma = c(0, 0, 0, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
+              runif(1, 0.1, 15),  # snare; gamma[1], p_mu[1]
+              runif(1, 0.1, 15)), # traps; gamma[2], p_mu[2]
+      gamma = c(NA, NA, NA, rgamma(1, 7.704547, 4.41925), rgamma(1, 3.613148, 3.507449))
     )
 
     message("Data model parameters")
