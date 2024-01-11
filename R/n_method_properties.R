@@ -132,13 +132,14 @@ n_method_properties <- function(df, n_properties, n, n_pp){
 
   ## joint and single return intervals ----
   n_return_intervals <- function(prop_vec, n){
+
     temp <- df |>
       filter(property %in% prop_vec) |>
       select(property, timestep, method) |>
       distinct() |>
       pivot_wider(names_from = method,
                   values_from = method) |>
-      unite(method, m_vec, sep = "&", na.rm = TRUE) |>
+      unite(method, -c(property, timestep), sep = "&", na.rm = TRUE) |>
       group_by(property, method) |>
       mutate(delta = c(0, diff(timestep))) |>
       # filter(delta > 0) |>
@@ -170,16 +171,29 @@ n_method_properties <- function(df, n_properties, n, n_pp){
       pull(property) |>
       unique()
 
-    np <- length(p)
+    rdf <- return_df |>
+      filter(property %in% p,
+             delta > 0)
 
-    if(nm >= 4 | np <= 3){
-      return_df |>
-        filter(property %in% p) |>
-        mutate(delta = if_else(delta == 0, sample.int(20, 1), delta))
+    missing_m <- rep(FALSE, 2)
+    if(nm >= 2) missing_m[1] <- ifelse(all(is.na(rdf$method_2)), TRUE, FALSE)
+    if(nm >= 3) missing_m[2] <- ifelse(all(is.na(rdf$method_3)), TRUE, FALSE)
+    if(nm >= 4) missing_m[3] <- ifelse(all(is.na(rdf$method_3)), TRUE, FALSE)
+    if(nm >= 5) missing_m[4] <- ifelse(all(is.na(rdf$method_3)), TRUE, FALSE)
+
+    create_deltas <- function(df, p){
+      temp <- df |>
+        filter(property %in% p)
+
+      z <- which(temp$delta == 0)
+      temp$delta[z] <- sample.int(20, length(z), replace = TRUE)
+      temp |> filter(delta > 0)
+    }
+
+    if(any(missing_m)){
+      return(create_deltas(return_df, p))
     } else {
-      return_df |>
-        filter(property %in% p,
-               delta > 0)
+      return(rdf)
     }
 
   }
