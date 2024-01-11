@@ -5,12 +5,10 @@ modelCode <- nimbleCode({
     log_rho[i] ~ dnorm(0, tau = 0.1)
   }
 
-  for(i in 1:3){
+  for(i in 1:2){
     p_mu[i] ~ dnorm(0, tau = 1)
     logit(p_unique[i]) <- p_mu[i]
-  }
 
-  for(i in 1:2){
     log_gamma[i] ~ dnorm(0, tau = 0.1)
   }
 
@@ -43,7 +41,7 @@ modelCode <- nimbleCode({
     log_potential_area[i] <- calc_log_potential_area(
       log_rho = log_rho[1:n_method],
       log_gamma = log_gamma[1:2],
-      p_unique = p_unique[1:3],
+      p_unique = p_unique[1:2],
       log_effort_per = log_effort_per[i],
       effort_per = effort_per[i],
       n_trap_m1 = n_trap_m1[i],

@@ -55,18 +55,17 @@ conduct_removals <- function(N, removal_order, effort_data, log_survey_area, X, 
     trap_count <- pull(e, trap_count)
     n_trap_m1 <- trap_count - 1
 
-    if(m == 1){ # firearms
-      log_potential_area <- log_rho[m] +
-        log_effort_per -
-        log(1 + (p_unique[m] * n_trap_m1))
-    } else if(m == 2 | m ==3){ # fixed wing and helicopter
+    if(m <= 3){ # firearms, fixed wing and helicopter
       log_potential_area <- log_rho[m] + log_effort_per
-    } else if(m == 4 | m == 5){
+    } else {
       log_potential_area <- log(pi) +
         (2 * (log_rho[m] + log_effort_per -
                 log(exp(log_gamma[m]) + effort_per))) +
         log(1 + (p_unique[m] * n_trap_m1))
     }
+
+    assertthat::assert_that(!is.na(log_potential_area),
+                            msg = "NA log potential area!")
 
     # probability of capture, given that an individual is in the surveyed area
     log_theta[r] <- log(

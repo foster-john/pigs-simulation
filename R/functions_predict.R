@@ -23,14 +23,10 @@ aerial_lpa <- function(log_rho, effort_per){
 
 #'@description Calculate the potential search area from posterior samples when firearms are used
 #'@param log_rho vector of mcmc samples for rho (log scale)
-#'@param p_unique vector of mcmc samples for p
 #'@param effort_per the effort per trap/snare
-#'@param n_trap_m1 the number of traps/snares used minus 1
 
-firearms_lpa <- function(log_rho, p_unique, effort_per, n_trap_m1){
-  log_rho +
-    log(effort_per) -
-    log(1 + (p_unique * n_trap_m1))
+firearms_lpa <- function(log_rho, effort_per){
+  log_rho + log(effort_per)
 }
 
 #'@description Calculate the potential search area from posterior samples for a vector of methods (used in forecasting code)
@@ -49,8 +45,7 @@ lpa <- function(method, log_rho, log_gamma, p_unique, effort_per, n_trap_m1){
     ep <- effort_per[j]
     tcm1 <- n_trap_m1[j]
     if(method[j] == 1){
-      p <- p_unique[,method[j]]
-      log_potential_area[,j] <- firearms_lpa(lr, p, ep, tcm1)
+      log_potential_area[,j] <- firearms_lpa(lr, ep)
     } else if(method[j] == 2 | method[j] == 3){
       log_potential_area[,j] <- aerial_lpa(lr, ep)
     } else if(method[j] == 4 | method[j] == 5){
@@ -132,9 +127,7 @@ data_posteriors <- function(samples, constants, data){
       if(method[i] == 1){
         log_potential_area[, i] <- firearms_lpa(
           log_rho = log_rho[, method[i]],
-          p_unique = p_unique[, method[i]],
-          effort_per = effort_per[i],
-          n_trap_m1 = n_trap_m1[i]
+          effort_per = effort_per[i]
         )
       } else if(method[i] == 2 | method[i] == 3){
         log_potential_area[, i] <- aerial_lpa(
@@ -145,7 +138,7 @@ data_posteriors <- function(samples, constants, data){
         log_potential_area[, i] <- trap_snare_lpa(
           log_rho = log_rho[, method[i]],
           log_gamma = log_gamma[, method[i] - 3],
-          p_unique = p_unique[, method[i] - 2],
+          p_unique = p_unique[, method[i] - 3],
           effort_per = effort_per[i],
           n_trap_m1 = n_trap_m1[i]
         )
