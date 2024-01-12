@@ -326,15 +326,12 @@ pH <- all_methods |>
   filter(idx %in% c(4, 5)) |>
   select(idx, p_unique, method, simulation) |>
   rename(actual = p_unique) |>
-  mutate(idx = if_else(idx == 1, idx, idx - 2))
+  mutate(idx = idx - 3)
 
 p_mu_long <- all_samples |>
   select_pivot_longer("p_mu[") |>
   mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
   mutate(value = ilogit(value))
-
-print(pH)
-print(p_mu_long)
 
 recovery_list$p_mu <- recov_gamma(p_mu_long, pH, all_psrf)
 residual_list$p_mu <- resid_gamma(p_mu_long, pH)
