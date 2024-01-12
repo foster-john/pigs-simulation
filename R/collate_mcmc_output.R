@@ -323,7 +323,7 @@ message("\nsearch area done\n")
 
 ## unique area ------
 pH <- all_methods |>
-  filter(idx %in% c(1, 4, 5)) |>
+  filter(idx %in% c(4, 5)) |>
   select(idx, p_unique, method, simulation) |>
   rename(actual = p_unique) |>
   mutate(idx = if_else(idx == 1, idx, idx - 2))
