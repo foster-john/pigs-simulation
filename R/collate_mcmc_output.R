@@ -160,7 +160,7 @@ for(i in seq_along(density_tasks)){
   all_samples <- bind_samples(all_samples, rds, task_id, start_density)
   all_y <- bind_y(all_y, rds, task_id, start_density)
   all_area <- bind_post_summaries(all_area, "posterior_potential_area", rds, task_id, start_density)
-  # all_theta <- bind_post_summaries(all_theta, "posterior_theta", rds, task_id, start_density)
+  all_theta <- bind_post_summaries(all_theta, "posterior_theta", rds, task_id, start_density)
   all_p <- bind_post_summaries(all_p, "posterior_p", rds, task_id, start_density)
   all_take <- bind_take(all_take, rds, task_id, start_density)
   all_N <- bind_N(all_N, rds, task_id, start_density)
@@ -179,7 +179,7 @@ if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 write_rds(all_methods, file.path(path, "method_parameter_lookup.rds"))
 
 data_model_summaries <- list(
-  # theta = all_theta,
+  theta = all_theta,
   potential_area = all_area,
   p = all_p
 )
@@ -332,6 +332,9 @@ p_mu_long <- all_samples |>
   select_pivot_longer("p_mu[") |>
   mutate(idx = as.numeric(str_extract(node, "(?<=\\[)\\d"))) |>
   mutate(value = ilogit(value))
+
+print(pH)
+print(p_mu_long)
 
 recovery_list$p_mu <- recov_gamma(p_mu_long, pH, all_psrf)
 residual_list$p_mu <- resid_gamma(p_mu_long, pH)
