@@ -8,8 +8,8 @@
 # #SBATCH --job-name=collate                       # job name
 # #SBATCH --output=outfiles/collate_%J.txt         # output file
 
-#SBATCH --job-name=d3.8_pp40
-#SBATCH --output=outfiles/d3.8-%a.txt   # output file
+#SBATCH --job-name=trapSnare
+#SBATCH --output=outfiles/trapSnare-%a.txt   # output file
 # #SBATCH --array=1-40
 
 # #SBATCH --dependency=afterany:13589
