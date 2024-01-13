@@ -3,7 +3,7 @@
 #SBATCH --nodes=1                 # default number of nodes
 #SBATCH --partition=cpu_compute   # good enough for what I need
 #SBATCH --cpus-per-task=3         # for a multithredded job
-# #SBATCH --mem=20g
+#SBATCH --mem=50g
 
 # #SBATCH --job-name=collate                       # job name
 # #SBATCH --output=outfiles/collate_%J.txt         # output file
@@ -15,5 +15,5 @@
 # #SBATCH --dependency=afterany:13589
 
 module load R
-Rscript R/workflow.R $SLURM_ARRAY_TASK_ID 
+Rscript R/workflow.R $SLURM_ARRAY_TASK_ID
 # Rscript R/collate_mcmc_output.R

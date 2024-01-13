@@ -1,5 +1,5 @@
 default:
-  model_dir: "betaSurvival_uniqueAreaTrapSnare"
+  model_dir: "betaSurvival_uniqueAreaTrapSnare_500"
   # start_density: 0.3
   start_density: 1.475
   # start_density: 2.65
