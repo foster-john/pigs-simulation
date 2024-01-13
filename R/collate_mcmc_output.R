@@ -150,7 +150,7 @@ for(i in seq_along(density_tasks)){
     next
   }
 
-  bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,1] >= 1.2)
+  bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,1] >= 1.1)
   converged <- rds$converged
 
   if(bad_mcmc) next
