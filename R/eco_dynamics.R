@@ -64,7 +64,7 @@ simulate_dm <- function(
   }
 
   extinct <- N_spin == 0
-  too_dense <- N_spin / survey_area > 10
+  too_dense <- N_spin / survey_area >= 10
 
   if(extinct | too_dense) return(NULL)
 
