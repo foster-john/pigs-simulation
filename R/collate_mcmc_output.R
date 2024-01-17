@@ -459,6 +459,27 @@ error_by_observation <- xn |>
             mse_abundance = mean((value - abundance)^2),
             mse_density = mean((estimated_density - density)^2),
             rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density)) |>
+  ungroup() |>
+  arrange(simulation, property, PPNum) |>
+  group_by(simulation, property) |>
+  mutate(delta = PPNum - lag(PPNum)) |>
+  ungroup() |>
+  left_join(n_attributes)
+
+write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
+message("\nabundance error by observation done\n")
+
+error_by_property <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = sqrt(mse_abundance),
             rmse_density = sqrt(mse_density),
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density)) |>
@@ -469,7 +490,7 @@ error_by_observation <- xn |>
   ungroup() |>
   left_join(n_attributes)
 
-write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
+write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
 message("\nabundance error by observation done\n")
 
 error_by_simulation <- xn |>
