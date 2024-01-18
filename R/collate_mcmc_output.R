@@ -407,6 +407,10 @@ message("\nsurvival done\n")
 write_rds(recovery_list, file.path(path, "parameterRecovery.rds"))
 write_rds(residual_list, file.path(path, "parameterResidual.rds"))
 
+rm(recovery_list)
+rm(residual_list)
+gc()
+
 ## abundance ------
 abundance <- all_N |>
   rename(abundance = N)
@@ -446,6 +450,7 @@ abundance_summaries <- xn |>
 
 write_rds(abundance_summaries, file.path(path, "abundance_summaries.rds"))
 rm(abundance_summaries)
+gc()
 message("\nposterior abundance done\n")
 
 error_by_observation <- xn |>
@@ -468,6 +473,7 @@ error_by_observation <- xn |>
 
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
 rm(error_by_observation)
+gc()
 message("\nabundance error by observation done\n")
 
 error_by_property <- xn |>
@@ -489,6 +495,7 @@ error_by_property <- xn |>
 
 write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
 rm(error_by_property)
+gc()
 message("\nabundance error by property done\n")
 
 error_by_simulation <- xn |>
@@ -513,6 +520,7 @@ error_by_simulation <- xn |>
 
 write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
 rm(error_by_simulation)
+gc()
 message("\nabundance error by simulation done\n")
 
 
@@ -536,6 +544,7 @@ take_summaries <- yy |>
 
 write_rds(take_summaries, file.path(path, "take_summaries.rds"))
 rm(take_summaries)
+gc()
 message("\nposterior take error by observation done\n")
 
 take_calc <- function(df){
@@ -558,6 +567,7 @@ error_by_observation <- yy |>
 
 write_rds(error_by_observation, file.path(path, "take_error_by_observation.rds"))
 rm(error_by_observation)
+gc()
 message("\nposterior take error by observation done\n")
 
 error_by_simulation <- yy |>
@@ -567,6 +577,7 @@ error_by_simulation <- yy |>
 
 write_rds(error_by_simulation, file.path(path, "take_error_by_simulation.rds"))
 rm(error_by_simulation)
+gc()
 message("\nposterior take error by observation done\n")
 
 error_by_simulation_method <- yy |>
@@ -576,6 +587,7 @@ error_by_simulation_method <- yy |>
 
 write_rds(error_by_simulation_method, file.path(path, "take_error_by_simulation_method.rds"))
 rm(error_by_simulation_method)
+gc()
 message("\nposterior take error by simulation method done\n")
 
 error_by_property <- yy |>
@@ -585,6 +597,7 @@ error_by_property <- yy |>
 
 write_rds(error_by_property, file.path(path, "take_error_by_property.rds"))
 rm(error_by_property)
+gc()
 message("\nposterior take error by property done\n")
 
 
