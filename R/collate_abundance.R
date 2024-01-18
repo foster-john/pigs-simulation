@@ -10,6 +10,7 @@ message("\n=== ABUNDANCE ===\n")
 
 # will get config_name from here
 source("R/functions_collate.R")
+config <- config::get(config = config_name)
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
