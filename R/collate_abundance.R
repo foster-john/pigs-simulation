@@ -22,7 +22,7 @@ message("Tasks to collate ", length(density_tasks))
 
 nodes_vec <- c(
   "all_samples",
-  "all_n"
+  "all_N"
 )
 tasks_ls <- get_tasks(density_tasks, read_path, nodes_vec)
 all_samples <- tasks_ls$all_samples
