@@ -26,8 +26,8 @@ get_path <- function(type, config_name, task_id){
   start_density <- start_vec[task_id]
   density_dir <- paste0("density_", start_density)
 
-  if(type = "read") path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
-  if(type = "write") path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
+  if(type == "read") path <- file.path(top_dir, project_dir, out_dir, dev_dir, model_dir, density_dir)
+  if(type == "write") path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir, density_dir)
   return(path)
 }
 
