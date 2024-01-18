@@ -411,8 +411,6 @@ write_rds(residual_list, file.path(path, "parameterResidual.rds"))
 abundance <- all_N |>
   rename(abundance = N)
 
-
-
 get_xn <- function(df, H){
   df |>
     select_pivot_longer("N[") |>
@@ -447,6 +445,7 @@ abundance_summaries <- xn |>
   left_join(n_attributes)
 
 write_rds(abundance_summaries, file.path(path, "abundance_summaries.rds"))
+rm(abundance_summaries)
 message("\nposterior abundance done\n")
 
 error_by_observation <- xn |>
@@ -468,6 +467,7 @@ error_by_observation <- xn |>
   left_join(n_attributes)
 
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
+rm(error_by_observation)
 message("\nabundance error by observation done\n")
 
 error_by_property <- xn |>
@@ -488,7 +488,8 @@ error_by_property <- xn |>
   left_join(n_attributes)
 
 write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
-message("\nabundance error by observation done\n")
+rm(error_by_property)
+message("\nabundance error by property done\n")
 
 error_by_simulation <- xn |>
   select(simulation, start_density, all_of(vals)) |>
@@ -511,6 +512,7 @@ error_by_simulation <- xn |>
 
 
 write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
+rm(error_by_simulation)
 message("\nabundance error by simulation done\n")
 
 
@@ -533,6 +535,7 @@ take_summaries <- yy |>
   left_join(all_take)
 
 write_rds(take_summaries, file.path(path, "take_summaries.rds"))
+rm(take_summaries)
 message("\nposterior take error by observation done\n")
 
 take_calc <- function(df){
@@ -554,6 +557,7 @@ error_by_observation <- yy |>
   left_join(all_take)
 
 write_rds(error_by_observation, file.path(path, "take_error_by_observation.rds"))
+rm(error_by_observation)
 message("\nposterior take error by observation done\n")
 
 error_by_simulation <- yy |>
@@ -562,6 +566,7 @@ error_by_simulation <- yy |>
   ungroup()
 
 write_rds(error_by_simulation, file.path(path, "take_error_by_simulation.rds"))
+rm(error_by_simulation)
 message("\nposterior take error by observation done\n")
 
 error_by_simulation_method <- yy |>
@@ -570,6 +575,7 @@ error_by_simulation_method <- yy |>
   ungroup()
 
 write_rds(error_by_simulation_method, file.path(path, "take_error_by_simulation_method.rds"))
+rm(error_by_simulation_method)
 message("\nposterior take error by simulation method done\n")
 
 error_by_property <- yy |>
@@ -578,6 +584,7 @@ error_by_property <- yy |>
   ungroup()
 
 write_rds(error_by_property, file.path(path, "take_error_by_property.rds"))
+rm(error_by_property)
 message("\nposterior take error by property done\n")
 
 
