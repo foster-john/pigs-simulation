@@ -4,8 +4,8 @@
 #SBATCH --partition=cpu_compute   # good enough for what I need
 #SBATCH --cpus-per-task=1         # for a multithredded job
 #SBATCH --mem=28g
-#SBATCH --job-name=collateAbundance                      # job name
-#SBATCH --output=outfiles/collateAbundance_%a.txt         # output file
+#SBATCH --job-name=collateTake                      # job name
+#SBATCH --output=outfiles/collateTake_%a.txt         # output file
 
 module load R
 Rscript R/collate_take.R $SLURM_ARRAY_TASK_ID
