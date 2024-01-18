@@ -24,7 +24,7 @@ nodes_vec <- c(
   "all_y",
   "all_take"
 )
-task_ls <- get_tasks(density_tasks, read_path, nodes_vec)
+tasks_ls <- get_tasks(density_tasks, read_path, nodes_vec)
 all_y <- tasks_ls$all_y
 all_take <- tasks_ls$all_take
 
