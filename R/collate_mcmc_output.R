@@ -571,5 +571,16 @@ error_by_simulation_method <- yy |>
 
 write_rds(error_by_simulation_method, file.path(path, "take_error_by_simulation_method.rds"))
 message("\nposterior take error by simulation method done\n")
+
+error_by_property <- yy |>
+  group_by(simulation, start_density, property) |>
+  take_calc() |>
+  ungroup()
+
+write_rds(error_by_property, file.path(path, "take_error_by_property.rds"))
+message("\nposterior take error by property done\n")
+
+
+
 message("=== DONE ===")
 
