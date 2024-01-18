@@ -484,10 +484,7 @@ error_by_property <- xn |>
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density)) |>
   ungroup() |>
-  arrange(simulation, property, PPNum) |>
-  group_by(simulation, property) |>
-  mutate(delta = PPNum - lag(PPNum)) |>
-  ungroup() |>
+  arrange(simulation, property) |>
   left_join(n_attributes)
 
 write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
@@ -574,5 +571,16 @@ error_by_simulation_method <- yy |>
 
 write_rds(error_by_simulation_method, file.path(path, "take_error_by_simulation_method.rds"))
 message("\nposterior take error by simulation method done\n")
+
+error_by_property <- yy |>
+  group_by(simulation, start_density, property) |>
+  take_calc() |>
+  ungroup()
+
+write_rds(error_by_property, file.path(path, "take_error_by_property.rds"))
+message("\nposterior take error by property done\n")
+
+
+
 message("=== DONE ===")
 
