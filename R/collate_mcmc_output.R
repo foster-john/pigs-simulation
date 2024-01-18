@@ -484,10 +484,7 @@ error_by_property <- xn |>
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density)) |>
   ungroup() |>
-  arrange(simulation, property, PPNum) |>
-  group_by(simulation, property) |>
-  mutate(delta = PPNum - lag(PPNum)) |>
-  ungroup() |>
+  arrange(simulation, property) |>
   left_join(n_attributes)
 
 write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
