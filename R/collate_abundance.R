@@ -1,0 +1,141 @@
+# --------------------------------------------------------------------
+#
+# Script for collating abundance from simulation results
+#
+# John Foster
+#
+# --------------------------------------------------------------------
+
+message("\n=== ABUNDANCE ===\n")
+
+# will get config_name from here
+source("R/functions_collate.R")
+
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- as.numeric(args[1])
+
+read_path <- get_path("read", config_name, task_id)
+
+density_tasks <- list.files(read_path)
+message("Tasks to collate ", length(density_tasks))
+
+nodes_vec <- c(
+  "all_samples",
+  "all_n"
+)
+task_ls <- get_tasks(density_tasks, read_path, nodes_vec)
+
+all_samples <- tasks_ls$all_samples
+all_N <- tasks_ls$all_N
+
+path <- get_path("write", config_name, task_id)
+if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
+
+## abundance ------
+abundance <- all_N |>
+  rename(abundance = N)
+
+rm(all_N)
+gc()
+
+xn <- all_samples |>
+  get_xn(abundance)
+
+vals <- c("abundance", "density", "value", "estimated_density")
+
+n_attributes <- xn |>
+  select(-value, -estimated_density) |>
+  distinct()
+
+abundance_summaries <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property, PPNum) |>
+  summarise(low_abundance = quantile(value, 0.025),
+            med_abundance = quantile(value, 0.5),
+            high_abundance = quantile(value, 0.975),
+            var_abundance = var(value),
+            low_density = quantile(estimated_density, 0.025),
+            med_density = quantile(estimated_density, 0.5),
+            high_density = quantile(estimated_density, 0.975),
+            var_density = var(estimated_density)) |>
+  ungroup() |>
+  left_join(n_attributes)
+
+write_rds(abundance_summaries, file.path(path, "abundance_summaries.rds"))
+rm(abundance_summaries)
+gc()
+message("\nposterior abundance done\n")
+
+error_by_observation <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property, PPNum) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density)) |>
+  ungroup() |>
+  arrange(simulation, property, PPNum) |>
+  group_by(simulation, property) |>
+  mutate(delta = PPNum - lag(PPNum)) |>
+  ungroup() |>
+  left_join(n_attributes)
+
+write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
+rm(error_by_observation)
+gc()
+message("\nabundance error by observation done\n")
+
+error_by_property <- xn |>
+  select(simulation, property, PPNum, all_of(vals)) |>
+  group_by(simulation, property) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density),
+            nm_rmse_abundance = rmse_abundance / mean(abundance),
+            nm_rmse_density = rmse_density / mean(density)) |>
+  ungroup() |>
+  arrange(simulation, property) |>
+  left_join(n_attributes)
+
+write_rds(error_by_property, file.path(path, "abundance_error_by_property.rds"))
+rm(error_by_property)
+gc()
+message("\nabundance error by property done\n")
+
+error_by_simulation <- xn |>
+  select(simulation, start_density, all_of(vals)) |>
+  group_by(simulation, start_density) |>
+  summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
+            mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mbias_abundance = mean(value - abundance),
+            mbias_density = mean(estimated_density - density),
+            mse_abundance = mean((value - abundance)^2),
+            mse_density = mean((estimated_density - density)^2),
+            rmse_abundance = sqrt(mse_abundance),
+            rmse_density = sqrt(mse_density),
+            nm_rmse_abundance = rmse_abundance / mean(abundance),
+            nm_rmse_density = rmse_density / mean(density),
+            ns_rmse_abundance = rmse_abundance / sd(abundance),
+            ns_rmse_density = rmse_density / sd(density),
+            sd_ratio_abundance = sd(value) / sd(abundance),
+            sd_ratio_density = sd(estimated_density) / sd(density)) |>
+  ungroup()
+
+
+write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
+rm(error_by_simulation)
+rm(xn)
+gc()
+
+message("\nabundance error by simulation done\n")
+
+message("=== ABUNDANCE DONE ===")
