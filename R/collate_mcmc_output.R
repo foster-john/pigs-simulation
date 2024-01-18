@@ -187,6 +187,9 @@ data_model_summaries <- list(
 write_rds(data_model_summaries, file.path(path, "data_model_summaries.rds"))
 message("\ndata model summaries done\n")
 
+rm(list = c("all_theta", "all_area", "all_p", "data_model_summaries"))
+gc()
+
 select_pivot_longer <- function(df, node){
   df |>
     select(contains(node), simulation, start_density) |>
@@ -415,6 +418,9 @@ gc()
 abundance <- all_N |>
   rename(abundance = N)
 
+rm(all_N)
+gc()
+
 get_xn <- function(df, H){
   df |>
     select_pivot_longer("N[") |>
@@ -520,7 +526,9 @@ error_by_simulation <- xn |>
 
 write_rds(error_by_simulation, file.path(path, "abundance_error_by_simulation.rds"))
 rm(error_by_simulation)
+rm(xn)
 gc()
+
 message("\nabundance error by simulation done\n")
 
 
