@@ -20,11 +20,8 @@ read_path <- get_path("read", config_name, task_id)
 density_tasks <- list.files(read_path)
 message("Tasks to collate ", length(density_tasks))
 
-nodes_vec <- c(
-  "all_y",
-  "all_take"
-)
-tasks_ls <- get_tasks(density_tasks, read_path, nodes_vec)
+nodes <- "take"
+tasks_ls <- get_tasks(density_tasks, read_path, nodes)
 all_y <- tasks_ls$all_y
 all_take <- tasks_ls$all_take
 

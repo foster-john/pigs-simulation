@@ -20,11 +20,8 @@ read_path <- get_path("read", config_name, task_id)
 density_tasks <- list.files(read_path)
 message("Tasks to collate ", length(density_tasks))
 
-nodes_vec <- c(
-  "all_samples",
-  "all_N"
-)
-tasks_ls <- get_tasks(density_tasks, read_path, nodes_vec)
+nodes <- "abundance"
+tasks_ls <- get_tasks(density_tasks, read_path, nodes)
 all_samples <- tasks_ls$all_samples
 all_N <- tasks_ls$all_N
 

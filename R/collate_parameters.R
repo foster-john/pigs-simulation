@@ -20,16 +20,8 @@ read_path <- get_path("read", config_name, task_id)
 density_tasks <- list.files(read_path)
 message("Tasks to collate ", length(density_tasks))
 
-nodes_vec <- c(
-  "all_samples",
-  "all_beta_p",
-  "all_methods",
-  "all_area",
-  "all_theta",
-  "all_p",
-  "all_psrf"
-)
-task_ls <- get_tasks(density_tasks, read_path, nodes_vec)
+nodes <- "parameters"
+tasks_ls <- get_tasks(density_tasks, read_path, nodes)
 all_samples <- task_ls$all_samples
 all_beta_p <- task_ls$all_beta_p
 all_methods <- task_ls$all_methods

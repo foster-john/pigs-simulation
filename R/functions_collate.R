@@ -252,7 +252,7 @@ get_tasks <- function(density_tasks, path, nodes){
     all_psrf <- tibble()
   }
 
-  if(nodes = "abundance"){
+  if(nodes == "abundance"){
     all_samples <- tibble()
     all_N <- tibble()
   }
@@ -326,7 +326,7 @@ get_tasks <- function(density_tasks, path, nodes){
     ls$all_psrf <- all_psrf
   }
 
-  if(nodes = "abundance"){
+  if(nodes == "abundance"){
     ls$all_samples <- all_samples
     ls$all_N <- all_N
   }
