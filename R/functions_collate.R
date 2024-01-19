@@ -49,20 +49,19 @@ bind_samples <- function(all_bind, ls, t_id, dens){
   bind_rows(all_bind, samples)
 }
 
-bind_y <- function(all_bind, ls, t_id, dens){
+get_y <- function(ls, t_id, dens){
   y_pred <- ls$posterior_take
   colnames(y_pred) <- 1:ncol(y_pred)
-  y_pred <- y_pred |>
+  y_pred |>
     as_tibble() |>
     add_ids(t_id, dens)
-  bind_rows(all_bind, y_pred)
 }
 
-bind_take <- function(all_bind, ls, t_id, dens){
-  take <- ls$take |>
+get_take <- function(ls, t_id, dens){
+  ls$take |>
     add_ids(t_id, dens) |>
     mutate(p_id = 1:n())
-  bind_rows(all_bind, take)
+
 }
 
 bind_post_summaries <- function(all_bind, node, ls, t_id, dens){
@@ -243,16 +242,25 @@ take_calc <- function(df){
 
 get_tasks <- function(density_tasks, path, nodes){
 
-  if("all_samples" %in% nodes) all_samples <- tibble()
-  if("all_take" %in% nodes)    all_take <- tibble()
-  if("all_N" %in% nodes)       all_N <- tibble()
-  if("all_beta_p" %in% nodes)  all_beta_p <- tibble()
-  if("all_methods" %in% nodes) all_methods <- tibble()
-  if("all_y" %in% nodes)       all_y <- tibble()
-  if("all_area" %in% nodes)    all_area <- tibble()
-  if("all_theta" %in% nodes)   all_theta <- tibble()
-  if("all_p" %in% nodes)       all_p <- tibble()
-  if("all_psrf" %in% nodes)    all_psrf <- tibble()
+  if(nodes == "parameters"){
+    all_samples <- tibble()
+    all_beta_p <- tibble()
+    all_methods <- tibble()
+    all_area <- tibble()
+    all_theta <- tibble()
+    all_p <- tibble()
+    all_psrf <- tibble()
+  }
+
+  if(nodes = "abundance"){
+    all_samples <- tibble()
+    all_N <- tibble()
+  }
+
+  if(nodes == "take"){
+    all_y <- tibble()
+    all_take <- tibble()
+  }
 
   message("Loop through tasks...")
 
@@ -276,44 +284,31 @@ get_tasks <- function(density_tasks, path, nodes){
 
     start_density <- rds$start_density
 
-    if("all_samples" %in% nodes) {
+    if(nodes == "parameters"){
       all_samples <- bind_samples(all_samples, rds, task_id, start_density)
-    }
-
-    if("all_y" %in% nodes) {
-      all_y <- bind_y(all_y, rds, task_id, start_density)
-    }
-
-    if("all_area" %in% nodes) {
+      all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
+      all_methods <- bind_methods(all_methods, rds, task_id, start_density)
       all_area <- bind_post_summaries(all_area, "posterior_potential_area", rds, task_id, start_density)
-    }
-
-    if("all_theta" %in% nodes) {
       all_theta <- bind_post_summaries(all_theta, "posterior_theta", rds, task_id, start_density)
-    }
-
-    if("all_p" %in% nodes) {
       all_p <- bind_post_summaries(all_p, "posterior_p", rds, task_id, start_density)
+      all_psrf <- bind_psrf(all_psrf, rds, task_id, start_density)
     }
 
-    if("all_take" %in% nodes) {
-      all_take <- bind_take(all_take, rds, task_id, start_density)
-    }
-
-    if("all_N" %in% nodes) {
+    if(nodes = "abundance"){
+      all_samples <- bind_samples(all_samples, rds, task_id, start_density)
       all_N <- bind_N(all_N, rds, task_id, start_density)
     }
 
-    if("all_beta_p" %in% nodes) {
-      all_beta_p <- bind_beta_p(all_beta_p, rds, task_id, start_density)
-    }
+    if(nodes == "take"){
+      rds_y <- get_y(rds, task_id, start_density)
+      rds_take <- get_take(rds, task_id, start_density)
 
-    if("all_methods" %in% nodes) {
-      all_methods <- bind_methods(all_methods, rds, task_id, start_density)
-    }
+      yy <- rds_y |>
+        get_post_take(rds_take)
 
-    if("all_psrf" %in% nodes) {
-      all_psrf <- bind_psrf(all_psrf, rds, task_id, start_density)
+      all_y <- bind_rows(all_y, yy)
+      all_take <- bind_rows(all_take, rds_take)
+
     }
 
     setTxtProgressBar(pb, i)
@@ -321,16 +316,25 @@ get_tasks <- function(density_tasks, path, nodes){
   close(pb)
 
   ls <- list()
-  if("all_samples" %in% nodes) ls$all_samples <- all_samples
-  if("all_take" %in% nodes)    ls$all_take <- all_take
-  if("all_N" %in% nodes)       ls$all_N <- all_N
-  if("all_beta_p" %in% nodes)  ls$all_beta_p <- all_beta_p
-  if("all_methods" %in% nodes) ls$all_methods <- all_methods
-  if("all_y" %in% nodes)       ls$all_y <- all_y
-  if("all_area" %in% nodes)    ls$all_area <- all_area
-  if("all_theta" %in% nodes)   ls$all_theta <- all_theta
-  if("all_p" %in% nodes)       ls$all_p <- all_p
-  if("all_psrf" %in% nodes)    ls$all_psrf <- all_psrf
+  if(nodes == "parameters"){
+    ls$all_samples <- all_samples
+    ls$all_beta_p <- all_beta_p
+    ls$all_methods <- all_methods
+    ls$all_area <- all_area
+    ls$all_theta <- all_theta
+    ls$all_p <- all_p
+    ls$all_psrf <- all_psrf
+  }
+
+  if(nodes = "abundance"){
+    ls$all_samples <- all_samples
+    ls$all_N <- all_N
+  }
+
+  if(nodes == "take"){
+    ls$all_y <- all_y
+    ls$all_take <- all_take
+  }
 
   return(ls)
 

@@ -31,10 +31,7 @@ all_take <- tasks_ls$all_take
 path <- get_path("write", config_name, task_id)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-yy <- all_y |>
-  get_post_take(all_take)
-
-take_summaries <- yy |>
+take_summaries <- all_y |>
   group_by(simulation, p_id, start_density) |>
   my_summary() |>
   ungroup() |>
@@ -45,7 +42,7 @@ rm(take_summaries)
 gc()
 message("\nposterior take error by observation done\n")
 
-error_by_observation <- yy |>
+error_by_observation <- all_y |>
   group_by(simulation, p_id, start_density) |>
   take_calc() |>
   ungroup() |>
@@ -57,7 +54,7 @@ rm(error_by_observation)
 gc()
 message("\nposterior take error by observation done\n")
 
-error_by_simulation <- yy |>
+error_by_simulation <- all_y |>
   group_by(start_density, simulation) |>
   take_calc() |>
   ungroup()
@@ -67,7 +64,7 @@ rm(error_by_simulation)
 gc()
 message("\nposterior take error by observation done\n")
 
-error_by_simulation_method <- yy |>
+error_by_simulation_method <- all_y |>
   group_by(simulation, start_density, method) |>
   take_calc() |>
   ungroup()
@@ -77,7 +74,7 @@ rm(error_by_simulation_method)
 gc()
 message("\nposterior take error by simulation method done\n")
 
-error_by_property <- yy |>
+error_by_property <- all_y |>
   group_by(simulation, start_density, property) |>
   take_calc() |>
   ungroup()
