@@ -294,7 +294,7 @@ get_tasks <- function(density_tasks, path, nodes){
       all_psrf <- bind_psrf(all_psrf, rds, task_id, start_density)
     }
 
-    if(nodes = "abundance"){
+    if(nodes == "abundance"){
       all_samples <- bind_samples(all_samples, rds, task_id, start_density)
       all_N <- bind_N(all_N, rds, task_id, start_density)
     }
