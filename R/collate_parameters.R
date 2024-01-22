@@ -22,13 +22,13 @@ message("Tasks to collate ", length(density_tasks))
 
 nodes <- "parameters"
 tasks_ls <- get_tasks(density_tasks, read_path, nodes)
-all_samples <- task_ls$all_samples
-all_beta_p <- task_ls$all_beta_p
-all_methods <- task_ls$all_methods
-all_area <- task_ls$all_area
-all_theta <- task_ls$all_theta
-all_p <- task_ls$all_p
-all_psrf <- task_ls$all_psrf
+all_samples <- tasks_ls$all_samples
+all_beta_p <- tasks_ls$all_beta_p
+all_methods <- tasks_ls$all_methods
+all_area <- tasks_ls$all_area
+all_theta <- tasks_ls$all_theta
+all_p <- tasks_ls$all_p
+all_psrf <- tasks_ls$all_psrf
 
 path <- get_path("write", config_name, task_id)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
