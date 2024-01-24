@@ -53,7 +53,7 @@ write_rds(error_by_observation, file.path(path, "take_error_by_observation.rds")
 message("\nposterior take error by observation done\n")
 
 take_effort_summary <- error_by_observation |>
-  group_by(property_id, PPNum, method) |>
+  group_by(start_density, simulation, property, PPNum, method) |>
   summarise(
     low_effort = quantile(effort_per, 0.025),
     q1_effort = quantile(effort_per, 0.25),
