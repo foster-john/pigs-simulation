@@ -67,7 +67,7 @@ message("\nposterior abundance done\n")
 
 error_by_observation <- xn |>
   select(simulation, property, PPNum, all_of(vals)) |>
-  group_by(simulation, property, PPNum, abundance, density) |>
+  group_by(simulation, property, PPNum) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
             mbias_abundance = mean(value - abundance),
@@ -75,10 +75,10 @@ error_by_observation <- xn |>
             rmse_abundance = sqrt(mean((value - abundance)^2)),
             rmse_density = sqrt(mean((estimated_density - density)^2))) |>
   ungroup() |>
-  mutate(nm_rmse_abundance = (rmse_abundance+1) / (abundance+1),
-         nm_rmse_density = (rmse_density+0.1) / (density+0.1)) |>
   arrange(simulation, property, PPNum) |>
-  left_join(n_attributes)
+  left_join(n_attributes) |>
+  mutate(nm_rmse_abundance = (rmse_abundance+1) / (abundance+1),
+         nm_rmse_density = (rmse_density+0.1) / (density+0.1))
 
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
 rm(error_by_observation)
