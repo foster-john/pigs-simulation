@@ -80,9 +80,6 @@ error_by_observation <- xn |>
             nm_rmse_density = (rmse_density+0.1) / (density+0.1)) |>
   ungroup() |>
   arrange(simulation, property, PPNum) |>
-  group_by(simulation, property) |>
-  mutate(delta = PPNum - lag(PPNum)) |>
-  ungroup() |>
   left_join(n_attributes)
 
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
