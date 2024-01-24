@@ -56,7 +56,6 @@ abundance_summaries <- xn |>
             high_density = quantile(estimated_density, 0.975),
             var_density = var(estimated_density)) |>
   ungroup() |>
-  mutate(recovered = if_else(value >= low_abundance & value <= high_abundance, 1, 0)) |>
   left_join(n_attributes)
 
 write_rds(abundance_summaries, file.path(path, "abundance_summaries.rds"))
