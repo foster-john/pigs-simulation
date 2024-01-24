@@ -32,6 +32,7 @@ take_summaries <- all_y |>
   group_by(simulation, p_id, start_density) |>
   my_summary() |>
   ungroup() |>
+  mutate(recovered = if_else(take >= low & take <= high, 1, 0)) |>
   left_join(all_take)
 
 write_rds(take_summaries, file.path(path, "take_summaries.rds"))
