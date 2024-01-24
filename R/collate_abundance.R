@@ -51,10 +51,12 @@ abundance_summaries <- xn |>
             med_abundance = quantile(value, 0.5),
             high_abundance = quantile(value, 0.975),
             var_abundance = var(value),
+            cv_abundance = sd(value) / mean(value),
             low_density = quantile(estimated_density, 0.025),
             med_density = quantile(estimated_density, 0.5),
             high_density = quantile(estimated_density, 0.975),
-            var_density = var(estimated_density)) |>
+            var_density = var(estimated_density),
+            cv_density = sd(estimated_density) / mean(estimated_density)) |>
   ungroup() |>
   left_join(n_attributes)
 
@@ -73,7 +75,9 @@ error_by_observation <- xn |>
             mse_abundance = mean((value - abundance)^2),
             mse_density = mean((estimated_density - density)^2),
             rmse_abundance = sqrt(mse_abundance),
-            rmse_density = sqrt(mse_density)) |>
+            rmse_density = sqrt(mse_density),
+            nm_rmse_abundance = (rmse_abundance+1) / (abundance+1),
+            nm_rmse_density = (rmse_density+0.1) / (density+0.1)) |>
   ungroup() |>
   arrange(simulation, property, PPNum) |>
   group_by(simulation, property) |>
