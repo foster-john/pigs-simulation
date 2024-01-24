@@ -50,8 +50,6 @@ error_by_observation <- all_y |>
   left_join(all_take)
 
 write_rds(error_by_observation, file.path(path, "take_error_by_observation.rds"))
-rm(error_by_observation)
-gc()
 message("\nposterior take error by observation done\n")
 
 take_effort_summary <- error_by_observation |>
@@ -76,6 +74,7 @@ take_effort_summary <- error_by_observation |>
 
 write_rds(take_effort_summary, file.path(path, "take_effort_summary.rds"))
 rm(take_effort_summary)
+rm(error_by_observation)
 gc()
 message("\nposterior take error summary done\n")
 
