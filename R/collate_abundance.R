@@ -67,7 +67,7 @@ message("\nposterior abundance done\n")
 
 error_by_observation <- xn |>
   select(simulation, property, PPNum, all_of(vals)) |>
-  group_by(simulation, property, PPNum, abundance, estimated_density) |>
+  group_by(simulation, property, PPNum, abundance, density) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
             mbias_abundance = mean(value - abundance),
