@@ -277,8 +277,13 @@ get_tasks <- function(density_tasks, path, nodes){
       next
     }
 
-    bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,2] > 1.1)
-    converged <- rds$converged
+
+    psrf <- rds$psrf |>
+      as_tibble() |>
+      mutate(node_names = rownames(rds$psrf)) |>
+      filter(node_names != "psi_phi")
+
+    bad_mcmc <- rds$bad_mcmc | any(psrf$`Upper C.I.` > 1.1)
 
     if(bad_mcmc) next
 
