@@ -277,7 +277,7 @@ get_tasks <- function(density_tasks, path, nodes){
       next
     }
 
-    bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,2] >= 1.1)
+    bad_mcmc <- rds$bad_mcmc | any(rds$psrf[,2] > 1.1)
     converged <- rds$converged
 
     if(bad_mcmc) next
