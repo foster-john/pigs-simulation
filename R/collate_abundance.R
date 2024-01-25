@@ -77,8 +77,8 @@ error_by_observation <- xn |>
   ungroup() |>
   arrange(simulation, property, PPNum) |>
   left_join(n_attributes) |>
-  mutate(nm_rmse_abundance = (rmse_abundance+1) / (abundance+1),
-         nm_rmse_density = (rmse_density+0.1) / (density+0.1))
+  mutate(nm_rmse_abundance = if_else(abundance == 0, rmse_abundance, rmse_abundance / abundance),
+         nm_rmse_density = if_else(density == 0, rmse_density, rmse_density / density))
 
 write_rds(error_by_observation, file.path(path, "abundance_error_by_observation.rds"))
 rm(error_by_observation)
@@ -92,10 +92,8 @@ error_by_property <- xn |>
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
-            mse_abundance = mean((value - abundance)^2),
-            mse_density = mean((estimated_density - density)^2),
-            rmse_abundance = sqrt(mse_abundance),
-            rmse_density = sqrt(mse_density),
+            rmse_abundance = sqrt(mean((value - abundance)^2)),
+            rmse_density = sqrt(mean((estimated_density - density)^2)),
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density)) |>
   ungroup() |>
@@ -114,10 +112,8 @@ error_by_simulation <- xn |>
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
-            mse_abundance = mean((value - abundance)^2),
-            mse_density = mean((estimated_density - density)^2),
-            rmse_abundance = sqrt(mse_abundance),
-            rmse_density = sqrt(mse_density),
+            rmse_abundance = sqrt(mean((value - abundance)^2)),
+            rmse_density = sqrt(mean((estimated_density - density)^2)),
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density),
             ns_rmse_abundance = rmse_abundance / sd(abundance),
