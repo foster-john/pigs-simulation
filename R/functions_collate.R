@@ -385,19 +385,20 @@ get_tasks <- function(density_tasks, path, nodes){
       all_y <- bind_rows(all_y, yy)
       all_take <- bind_rows(all_take, rds_take)
 
-      ebo <- take_error_by_observation(y_long, rds_take, task_id, start_density)
+      y_long_take <- y_long |> left_join(rds_take)
+      ebo <- take_error_by_observation(y_long_take, rds_take, task_id, start_density)
       all_by_observation <- bind_rows(all_by_observation, ebo)
 
       tes <- take_effort_summary(ebo)
       all_effort_summary <- bind_rows(all_effort_summary, tes)
 
-      by_simulation <- take_error_by_simulation(yy)
+      by_simulation <- take_error_by_simulation(y_long_take)
       all_by_simulation <- bind_rows(all_by_simulation, by_simulation)
 
-      by_simulation_method <- take_error_by_simulation_method(yy)
+      by_simulation_method <- take_error_by_simulation_method(y_long_take)
       all_by_simulation_method <- bind_rows(all_by_simulation_method, by_simulation_method)
 
-      by_property <- take_error_by_property(yy)
+      by_property <- take_error_by_property(y_long_take)
       all_by_property <- bind_rows(all_by_property, by_property)
 
     }
