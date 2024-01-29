@@ -385,7 +385,7 @@ get_tasks <- function(density_tasks, path, nodes){
       all_y <- bind_rows(all_y, yy)
       all_take <- bind_rows(all_take, rds_take)
 
-      y_long_take <- y_long |> left_join(rds_take)
+      y_long_take <- y_long |> mutate(p_id = as.integer(p_id)) |> left_join(rds_take)
       ebo <- take_error_by_observation(y_long_take, rds_take, task_id, start_density)
       all_by_observation <- bind_rows(all_by_observation, ebo)
 
