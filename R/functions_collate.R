@@ -58,11 +58,70 @@ get_y <- function(ls, t_id, dens){
       cols = everything(),
       names_to = "p_id",
       values_to = "value") |>
+    add_ids(t_id, dens)
+}
+
+take_summary <- function(y_long, t_id, dens){
+  y_long |>
     group_by(p_id) |>
     my_summary() |>
     ungroup() |>
     add_ids(t_id, dens) |>
     mutate(p_id = as.numeric(p_id))
+}
+
+take_error_by_observation <- function(y_long, rds_take, t_id, dens){
+  y_long |>
+    group_by(p_id) |>
+    take_calc() |>
+    ungroup() |>
+    select(-nm_rmse, -sd_ratio) |>
+    left_join(rds_take) |>
+    add_ids(t_id, dens)
+
+}
+
+take_effort_summary <- function(ebo){
+  ebo |>
+    group_by(start_density, simulation, property, PPNum, method) |>
+    summarise(
+      low_effort = quantile(effort_per, 0.025),
+      q1_effort = quantile(effort_per, 0.25),
+      median_effort = quantile(effort_per, 0.5),
+      mean_effort = mean(effort_per),
+      sum_effort = sum(effort_per),
+      q3_effort = quantile(effort_per, 0.75),
+      high_effort = quantile(effort_per, 0.975),
+      low_trap_count = quantile(trap_count, 0.025),
+      q1_trap_count = quantile(trap_count, 0.25),
+      median_trap_count = quantile(trap_count, 0.5),
+      mean_trap_count = mean(trap_count),
+      sum_trap_count = sum(trap_count),
+      q3_trap_count = quantile(trap_count, 0.75),
+      high_trap_count = quantile(trap_count, 0.975),
+      n_reps = n()
+    )
+}
+
+take_error_by_simulation <- function(y_long){
+  y_long |>
+    group_by(start_density, simulation) |>
+    take_calc() |>
+    ungroup()
+}
+
+take_error_by_simulation_method <- function(y_long){
+  y_long |>
+    group_by(simulation, start_density, method) |>
+    take_calc() |>
+    ungroup()
+}
+
+take_error_by_property <- function(y_long){
+  y_long |>
+    group_by(simulation, start_density, property) |>
+    take_calc() |>
+    ungroup()
 }
 
 get_take <- function(ls, t_id, dens){
@@ -268,6 +327,11 @@ get_tasks <- function(density_tasks, path, nodes){
   if(nodes == "take"){
     all_y <- tibble()
     all_take <- tibble()
+    all_by_observation <- tibble()
+    all_effort_summary <- tibble()
+    all_by_simulation <- tibble()
+    all_by_simulation_method <- tibble()
+    all_by_property <- tibble()
   }
 
   message("Loop through tasks...")
@@ -313,13 +377,28 @@ get_tasks <- function(density_tasks, path, nodes){
     }
 
     if(nodes == "take"){
-      rds_y <- get_y(rds, task_id, start_density)
+      y_long <- get_y(rds, task_id, start_density)
       rds_take <- get_take(rds, task_id, start_density)
 
-      yy <- rds_y |> left_join(rds_take)
-
+      y_summary <- take_summary(y_long, task_id, start_density)
+      yy <- y_summary |> left_join(rds_take)
       all_y <- bind_rows(all_y, yy)
       all_take <- bind_rows(all_take, rds_take)
+
+      ebo <- take_error_by_observation(y_long, rds_take, task_id, start_density)
+      all_by_observation <- bind_rows(all_by_observation, ebo)
+
+      tes <- take_effort_summary(ebo)
+      all_effort_summary <- bind_rows(all_effort_summary, tes)
+
+      by_simulation <- take_error_by_simulation(yy)
+      all_by_simulation <- bind_rows(all_by_simulation, by_simulation)
+
+      by_simulation_method <- take_error_by_simulation_method(yy)
+      all_by_simulation_method <- bind_rows(all_by_simulation_method, by_simulation_method)
+
+      by_property <- take_error_by_property(yy)
+      all_by_property <- bind_rows(all_by_property, by_property)
 
     }
 
@@ -346,6 +425,11 @@ get_tasks <- function(density_tasks, path, nodes){
   if(nodes == "take"){
     ls$all_y <- all_y
     ls$all_take <- all_take
+    ls$all_by_observation <- all_by_observation
+    ls$all_effort_summary <- all_effort_summary
+    ls$all_by_simulation <- all_by_simulation
+    ls$all_by_simulation_method <- all_by_simulation_method
+    ls$all_by_property <- all_by_property
   }
 
   return(ls)
