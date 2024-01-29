@@ -54,7 +54,15 @@ get_y <- function(ls, t_id, dens){
   colnames(y_pred) <- 1:ncol(y_pred)
   y_pred |>
     as_tibble() |>
-    add_ids(t_id, dens)
+    pivot_longer(
+      cols = everything(),
+      names_to = "p_id",
+      values_to = "value") |>
+    group_by(p_id) |>
+    my_summary() |>
+    ungroup() |>
+    add_ids(t_id, dens) |>
+    mutate(p_id = as.numeric(p_id))
 }
 
 get_take <- function(ls, t_id, dens){
@@ -308,8 +316,7 @@ get_tasks <- function(density_tasks, path, nodes){
       rds_y <- get_y(rds, task_id, start_density)
       rds_take <- get_take(rds, task_id, start_density)
 
-      yy <- rds_y |>
-        get_post_take(rds_take)
+      yy <- rds_y |> left_join(rds_take)
 
       all_y <- bind_rows(all_y, yy)
       all_take <- bind_rows(all_take, rds_take)
