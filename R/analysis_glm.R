@@ -228,4 +228,4 @@ mFullg <- gam(nm_rmse_density ~                         # global intercept
 
 summary(mFullg)
 
-write_rds(mFull, file.path(path, "gam_full.rds"))
+write_rds(mFullg, file.path(path, "gam_full.rds"))
