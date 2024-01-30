@@ -1,15 +1,8 @@
-library(targets)
-library(tidyverse)
-library(lubridate)
-library(spdep)
-library(readxl)
-library(spatialreg)
-library(parallel)
-library(nimble)
-library(rgdal)
-library(coda)
+library(dplyr)
+library(tidyr)
+library(readr)
 library(mgcv)
-library(knitr)
+library(lme4)
 
 # analysis_dir <- "analysis"
 # model_dir <- "betaSurvival_uniqueAreaTrapSnare"
@@ -172,7 +165,7 @@ data <- data_final_join |>
          property_area = rescale_variable(property_area))
 
 ## glm to explain normalised rmse given mean effort
-library(lme4)
+
 
 mFull <- glmer(nm_rmse_density ~                         # global intercept
                  (1 | method) +                          # random effect intercept for each method
