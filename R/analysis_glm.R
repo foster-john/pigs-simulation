@@ -11,9 +11,21 @@ library(coda)
 library(mgcv)
 library(knitr)
 
-analysis_dir <- "analysis"
-model_dir <- "betaSurvival_uniqueAreaTrapSnare"
-density_dirs <- list.files(file.path(analysis_dir, model_dir))
+# analysis_dir <- "analysis"
+# model_dir <- "betaSurvival_uniqueAreaTrapSnare"
+# density_dirs <- list.files(file.path(analysis_dir, model_dir))
+
+config_name <- "hpc_production"
+config <- config::get(config = config_name)
+top_dir <- config$top_dir
+out_dir <- config$out_dir
+analysis_dir <- config$analysis_dir
+dev_dir <- config$dev_dir
+model_dir <- config$model_dir
+project_dir <- config$project_dir
+
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+density_dirs <- list.files(path)
 
 map_files <- function(dirs_vec, file_name, node){
 
