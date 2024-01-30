@@ -7,5 +7,5 @@
 #SBATCH --output=outfiles/glm.txt         # output file
 
 module load R
-Rscript R/analysis_glm.R
+Rscript R/analysis_glm.R $SLURM_ARRAY_TASK_ID
 

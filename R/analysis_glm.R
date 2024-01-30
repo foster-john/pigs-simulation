@@ -170,62 +170,74 @@ data <- data_final_join |>
          sum_take_density = rescale_variable(sum_take_density),
          property_area = rescale_variable(property_area))
 
-## glm to explain normalised rmse given mean effort
-p <- 1.01
-
-message("Fit full model glm")
-mFull <- glmer(nm_rmse_density ~                         # global intercept
-                 (1 | method) +                          # random effect intercept for each method
-                 (1 | methods_used) +                    # random effect intercept for methods used in each PP
-                 (0 + mean_effort | method) +            # mean effort per trap deviations across methods
-                 (0 + sum_effort | method) +             # total effort per trap deviations across methods
-                 (0 + mean_trap_count | method) +        # mean number of traps deviations across methods
-                 (0 + sum_trap_count | method) +         # total number of traps deviations across methods
-                 (0 + n_reps | method) +                 # number events deviations across methods
-                 (0 + return_interval | methods_used) +  # return interval deviations across levels of methods used
-                 med_density +                           # the effect (slope) of median estimated density
-                 n_methods_used +                        # the effect (slope) of number of methods used in PP
-                 sum_take_density +                      # the effect (slope) of total take in PP as a density
-                 property_area +                         # the effect (slope) of property area
-                 I(med_density * n_methods_used) +       # the interaction between median estimated density and number of methods used in PP
-                 I(med_density * sum_take_density) +     # the interaction between median estimated density and total take in PP as a density
-                 I(med_density * property_area) +        # the interaction between median estimated density and property area
-                 I(n_methods_used * sum_take_density) +  # the interaction between number of methods used in PP and total take in PP as a density
-                 I(n_methods_used * property_area) +     # the interaction between number of methods used in PP property area
-                 I(sum_take_density * property_area),    # the interaction between total take in PP as a density and property area
-               family = Tweedie(p = p),
-               data = data)
-
-summary(mFull)
-
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GLMs", model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-write_rds(mFull, file.path(path, "glmer_full.rds"))
 
-message("Fit full model gam")
-mFullg <- gam(nm_rmse_density ~                         # global intercept
-                 s(method, bs = "re") +                          # random effect intercept for each method
-                 s(methods_used, bs = "re") +                    # random effect intercept for methods used in each PP
-                 s(mean_effort, by = method) +            # mean effort per trap deviations across methods
-                 s(sum_effort, by = method) +             # total effort per trap deviations across methods
-                 s(mean_trap_count, by = method) +        # mean number of traps deviations across methods
-                 s(sum_trap_count, by = method) +         # total number of traps deviations across methods
-                 s(n_reps, by = method) +                 # number events deviations across methods
-                 s(return_interval, by = methods_used) +  # return interval deviations across levels of methods used
-                 s(med_density, bs = "cs") +                           # the effect (slope) of median estimated density
-                 s(n_methods_used, bs = "cs") +                        # the effect (slope) of number of methods used in PP
-                 s(sum_take_density, bs = "cs") +                      # the effect (slope) of total take in PP as a density
-                 s(property_area, bs = "cs") +                         # the effect (slope) of property area
-                 s(med_density, n_methods_used) +       # the interaction between median estimated density and number of methods used in PP
-                 s(med_density, sum_take_density) +     # the interaction between median estimated density and total take in PP as a density
-                 s(med_density, property_area) +        # the interaction between median estimated density and property area
-                 s(n_methods_used, sum_take_density) +  # the interaction between number of methods used in PP and total take in PP as a density
-                 s(n_methods_used, property_area) +     # the interaction between number of methods used in PP property area
-                 s(sum_take_density, property_area),    # the interaction between total take in PP as a density and property area
-               family = Tweedie(p = p),
-               data = data)
+## glm to explain normalised rmse given mean effort
+p <- 1.01
 
-summary(mFullg)
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- as.numeric(args[1])
 
-write_rds(mFullg, file.path(path, "gam_full.rds"))
+if(task_id == 1){
+  message("Fit full model glm")
+  mFull <- glmer(nm_rmse_density ~                         # global intercept
+                   (1 | method) +                          # random effect intercept for each method
+                   (1 | methods_used) +                    # random effect intercept for methods used in each PP
+                   (0 + mean_effort | method) +            # mean effort per trap deviations across methods
+                   (0 + sum_effort | method) +             # total effort per trap deviations across methods
+                   (0 + mean_trap_count | method) +        # mean number of traps deviations across methods
+                   (0 + sum_trap_count | method) +         # total number of traps deviations across methods
+                   (0 + n_reps | method) +                 # number events deviations across methods
+                   (0 + return_interval | methods_used) +  # return interval deviations across levels of methods used
+                   med_density +                           # the effect (slope) of median estimated density
+                   n_methods_used +                        # the effect (slope) of number of methods used in PP
+                   sum_take_density +                      # the effect (slope) of total take in PP as a density
+                   property_area +                         # the effect (slope) of property area
+                   I(med_density * n_methods_used) +       # the interaction between median estimated density and number of methods used in PP
+                   I(med_density * sum_take_density) +     # the interaction between median estimated density and total take in PP as a density
+                   I(med_density * property_area) +        # the interaction between median estimated density and property area
+                   I(n_methods_used * sum_take_density) +  # the interaction between number of methods used in PP and total take in PP as a density
+                   I(n_methods_used * property_area) +     # the interaction between number of methods used in PP property area
+                   I(sum_take_density * property_area),    # the interaction between total take in PP as a density and property area
+                 family = Tweedie(p = p),
+                 data = data)
+
+  summary(mFull)
+  write_rds(mFull, file.path(path, "glmer_full.rds"))
+
+} else if(task_id == 2){
+  message("Fit full model gam")
+  mFullg <- gam(nm_rmse_density ~                         # global intercept
+                  s(method, bs = "re") +                          # random effect intercept for each method
+                  s(methods_used, bs = "re") +                    # random effect intercept for methods used in each PP
+                  s(mean_effort, by = method) +            # mean effort per trap deviations across methods
+                  s(sum_effort, by = method) +             # total effort per trap deviations across methods
+                  s(mean_trap_count, by = method) +        # mean number of traps deviations across methods
+                  s(sum_trap_count, by = method) +         # total number of traps deviations across methods
+                  s(n_reps, by = method) +                 # number events deviations across methods
+                  s(return_interval, by = methods_used) +  # return interval deviations across levels of methods used
+                  s(med_density, bs = "cs") +                           # the effect (slope) of median estimated density
+                  s(n_methods_used, bs = "cs") +                        # the effect (slope) of number of methods used in PP
+                  s(sum_take_density, bs = "cs") +                      # the effect (slope) of total take in PP as a density
+                  s(property_area, bs = "cs") +                         # the effect (slope) of property area
+                  s(med_density, n_methods_used) +       # the interaction between median estimated density and number of methods used in PP
+                  s(med_density, sum_take_density) +     # the interaction between median estimated density and total take in PP as a density
+                  s(med_density, property_area) +        # the interaction between median estimated density and property area
+                  s(n_methods_used, sum_take_density) +  # the interaction between number of methods used in PP and total take in PP as a density
+                  s(n_methods_used, property_area) +     # the interaction between number of methods used in PP property area
+                  s(sum_take_density, property_area),    # the interaction between total take in PP as a density and property area
+                family = Tweedie(p = p),
+                data = data)
+
+  summary(mFullg)
+  write_rds(mFullg, file.path(path, "gam_full.rds"))
+
+}
+
+
+
+
+
+
