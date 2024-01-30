@@ -7,7 +7,8 @@ library(lme4)
 
 # analysis_dir <- "analysis"
 # model_dir <- "betaSurvival_uniqueAreaTrapSnare"
-# density_dirs <- list.files(file.path(analysis_dir, model_dir))
+# path <- file.path(analysis_dir, model_dir)
+# density_dirs <- list.files(path)
 
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
@@ -24,7 +25,7 @@ density_dirs <- list.files(path)
 map_files <- function(dirs_vec, file_name, node){
 
   get_files <- function(density_dir, file_name, node){
-    sim_results <- file.path(analysis_dir, model_dir, density_dir)
+    sim_results <- file.path(path, density_dir)
     ls <- read_rds(file.path(sim_results, file_name))
     ls[[node]]
   }
@@ -39,7 +40,7 @@ map_files <- function(dirs_vec, file_name, node){
 map_files2 <- function(dirs_vec, file_name){
 
   get_files <- function(density_dir, file_name, node){
-    sim_results <- file.path(analysis_dir, model_dir, density_dir)
+    sim_results <- file.path(path, density_dir)
     ls <- read_rds(file.path(sim_results, file_name))
   }
 
@@ -50,22 +51,26 @@ map_files2 <- function(dirs_vec, file_name){
 
 }
 
+message("Get abundance summaries")
 abundance_file <- "abundance_summaries.rds"
 f_name <- abundance_file
 df <- map_files2(density_dirs, f_name)
 
+# create property ID for easier joining
 property_ids <- df |>
   select(start_density, simulation, property) |>
   distinct() |>
   mutate(property_id = paste(start_density, simulation, property, sep = "-"))
 
-df |>
+message("Sample size by start density:")
+sample_size <- df |>
   select(start_density, simulation) |>
   distinct() |>
   group_by(start_density) |>
   count() |>
   rename(`Start density` = start_density,
          `n simulations` = n)
+print(sample_size)
 
 abundance_file <- "abundance_error_by_observation.rds"
 f_name <- abundance_file
@@ -167,7 +172,7 @@ data <- data_final_join |>
 
 ## glm to explain normalised rmse given mean effort
 
-
+message("Fit full model")
 mFull <- glmer(nm_rmse_density ~                         # global intercept
                  (1 | method) +                          # random effect intercept for each method
                  (1 | methods_used) +                    # random effect intercept for methods used in each PP
