@@ -214,6 +214,9 @@ source("R/functions_analysis.R")
 file_dest <- file.path(path, "glmNull.rds")
 fit_glm_null(data, file_dest)
 
+file_dest <- file.path(path, "gamNull.rds")
+fit_gam_null(data, file_dest)
+
 #####################################
 # All individual effects ----
 #####################################
