@@ -158,10 +158,15 @@ data_final_join <- left_join(density_obs_take, n_return)
 
 rescale_variable <- function(x) (x - mean(x)) / sd(x)
 
+outlier <- data_final_join |>
+  filter(density > 0) |>
+  pull(nm_rmse_abundance) |>
+  quantile(0.999)
+
 data <- data_final_join |>
   ungroup() |>
   filter(density > 0,
-         nm_rmse_abundance < quantile(data$nm_rmse_abundance, 0.999)) |>
+         nm_rmse_abundance < outlier) |>
   rename(nrmse = nm_rmse_abundance) |>
   select(-abundance, -nm_rmse_density, -rmse_abundance, -rmse_density) |>
   mutate(method = as.factor(method),
