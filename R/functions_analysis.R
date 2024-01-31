@@ -120,11 +120,121 @@ fit_glm_individual <- function(df, outname){
     )
   message("   Done")
 
+  message("  GLM - sum_effort")
+  m_list$glm_1.10 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + sum_effort,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_trap_count")
+  m_list$glm_1.11 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + sum_trap_count,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
   write_rds(m_list, outname)
   message("GLM individual models done")
   return(m_list)
 
 }
+
+fit_glm_sum_take <- function(df, outname){
+
+  require(lme4)
+  m_list <- list()
+
+  message("  GLM - sum_take_density + return_interval")
+  m_list$glm_2.1 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        return_interval +
+        I(sum_take_density * return_interval),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_take_density + delta")
+  m_list$glm_2.2 <-
+    glmer(nrmse ~ (1 | methods_used) +
+            sum_take_density +
+            delta +
+            I(sum_take_density * delta),
+          family = Gamma(link = "log"),
+          data = df)
+  message("   Done")
+
+  message("  GLM - sum_take_density + n_reps")
+  m_list$glm_2.3 <-
+    glmer(nrmse ~ (1 | methods_used) +
+            sum_take_density +
+            n_reps +
+            I(sum_take_density * n_reps),
+          family = Gamma(link = "log"),
+          data = df)
+  message("   Done")
+
+  message("  GLM - sum_take_density + n_methods_used")
+  m_list$glm_2.4 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        n_methods_used +
+        I(sum_take_density * n_methods_used),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_take_density + property_area")
+  m_list$glm_2.5 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        property_area +
+        I(sum_take_density * property_area),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_take_density + sum_effort")
+  m_list$glm_2.6 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        sum_effort +
+        I(sum_take_density * sum_effort),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_take_density + sum_trap_count")
+  m_list$glm_2.7 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        sum_trap_count +
+        I(sum_take_density * sum_trap_count),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  write_rds(m_list, outname)
+  message("GLM sum take + interactions models done")
+  return(m_list)
+
+}
+
 
 fit_gam_individual <- function(df, outname){
 

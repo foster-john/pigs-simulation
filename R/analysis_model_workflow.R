@@ -211,25 +211,28 @@ source("R/functions_analysis.R")
 # Null model ----
 #####################################
 
-file_dest <- file.path(path, "glmNull.rds")
-fit_glm_null(data, file_dest)
-
-file_dest <- file.path(path, "gamNull.rds")
-fit_gam_null(data, file_dest)
+# file_dest <- file.path(path, "glmNull.rds")
+# fit_glm_null(data, file_dest)
+#
+# file_dest <- file.path(path, "gamNull.rds")
+# fit_gam_null(data, file_dest)
 
 #####################################
 # All individual effects ----
 #####################################
 
-file_dest <- file.path(path, "glmIndividual.rds")
+# file_dest <- file.path(path, "glmIndividual.rds")
+# fit_glm_individual(data, file_dest)
+#
+# file_dest <- file.path(path, "gamIndividual.rds")
+# fit_gam_individual(data, file_dest)
+
+#####################################
+# GLM total take as density + individual effects ----
+#####################################
+
+file_dest <- file.path(path, "glmSumTakeIndividual.rds")
 fit_glm_individual(data, file_dest)
-
-file_dest <- file.path(path, "gamIndividual.rds")
-fit_gam_individual(data, file_dest)
-
-
-
-
 
 
 
