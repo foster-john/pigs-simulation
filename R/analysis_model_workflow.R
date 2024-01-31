@@ -232,7 +232,7 @@ source("R/functions_analysis.R")
 #####################################
 
 file_dest <- file.path(path, "glmSumTakeIndividual.rds")
-fit_glm_individual(data, file_dest)
+fit_glm_sum_take(data, file_dest)
 
 
 
