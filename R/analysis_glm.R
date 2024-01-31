@@ -186,7 +186,7 @@ data <- data_final_join |>
   # ungroup() |>
   mutate(med_density = rescale_variable(med_density),
          return_interval = rescale_variable(return_interval),
-         #n_methods_used = rescale_variable(n_methods_used),
+         n_methods_used = rescale_variable(n_methods_used),
          sum_take_density = rescale_variable(sum_take_density),
          property_area = rescale_variable(property_area),
          start_density = as.factor(start_density),
@@ -202,98 +202,43 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GLMs", model_dir
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 
-args <- commandArgs(trailingOnly = TRUE)
-task_id <- as.numeric(args[1])
+# args <- commandArgs(trailingOnly = TRUE)
+# task_id <- as.numeric(args[1])
+
+source("R/functions_analysis.R")
+
+#####################################
+# Null model ----
+#####################################
+
+file_dest <- file.path(path, "glmNull.rds")
+fit_glm_null(data, file_dest)
+
+#####################################
+# All individual effects ----
+#####################################
+
+file_dest <- file.path(path, "glmIndividual.rds")
+fit_glm_individual(data, file_dest)
+
+file_dest <- file.path(path, "gamIndividual.rds")
+fit_gam_individual(data, file_dest)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if(task_id == 0){
-
-  ## Null model - random intercepts by methods used in PP
-  message("\n=== Model 0 ===")
-  message("  GLM")
-  m_list <- list()
-  glm <- glmer(nrmse ~
-                   (1 | methods_used),
-                 family = Gamma(link = "log"),
-                 data = data)
-  m_list$glm <- glm
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-  message("  GAM")
-  gam <- gam(nrmse ~
-                 s(methods_used, bs = "re"),
-               family = Gamma(link = "log"),
-               data = data)
-  m_list$m0 <- gam
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-} else if(task_id == 1){
-
-  ## All individual effects +
-  ## mean effort and mean trap count in a PP across methods
-  message("\n=== Model 1 ===")
-  message("  GLM")
-  m_list <- list()
-  glm <- glmer(nrmse ~
-                   (1 | methods_used) +
-                   return_interval +
-                   med_density +
-                   delta +
-                   n_reps +
-                   n_methods_used +
-                   sum_take_density +
-                   property_area +
-                   mean_effort +
-                   mean_trap_count,
-                 family = Gamma(link = "log"),
-                 data = data)
-  m_list$glm <- glm
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-  message("  GAM")
-  gam <- gam(nrmse ~
-                 s(methods_used, bs = "re") +
-                 s(return_interval, bs = "cr") +
-                 s(med_density, bs = "cr") +
-                 s(delta, bs = "cr") +
-                 s(n_reps, bs = "cr") +
-                 s(n_methods_used, bs = "cr") +
-                 s(sum_take_density, bs = "cr") +
-                 s(property_area, bs = "cr") +
-                 s(mean_effort, bs = "cr") +
-                 s(mean_trap_count, bs = "cr"),
-               family = Gamma(link = "log"),
-               data = data)
-  m_list$glm <- gam
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-} else if(task_id == 2){
-
-  ## All individual effects +
-  ## sum effort and sum trap count in a PP across methods
-  message("\n=== Model 2 ===")
-  message("  GLM")
-  m_list <- list()
-  glm <- glmer(nrmse ~
-                 (1 | methods_used) +
-                 return_interval +
-                 med_density +
-                 delta +
-                 n_reps +
-                 n_methods_used +
-                 sum_take_density +
-                 property_area +
-                 sum_effort +
-                 sum_trap_count,
-               family = Gamma(link = "log"),
-               data = data)
-  m_list$glm <- glm
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
 
   message("  GAM")
   gam <- gam(nrmse ~
@@ -310,7 +255,7 @@ if(task_id == 0){
              family = Gamma(link = "log"),
              data = data)
   m_list$glm <- gam
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
+
   message("    -> done")
 
 } else if(task_id == 3){

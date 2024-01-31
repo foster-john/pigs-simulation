@@ -1,0 +1,217 @@
+
+
+
+fit_glm_null <- function(df, outname){
+
+  require(lme4)
+  m_list <- list()
+
+  message("  GLM - null")
+  glm_0 <-
+    glmer(
+      nrmse ~ (1 | methods_used),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  m_list$glm_0 <- glm_0
+  write_rds(m_list, outname)
+  message("   Done")
+  return(glm_0)
+}
+
+fit_gam_null <- function(df, outname){
+
+  require(mgcv)
+  m_list <- list()
+
+  message("  GAM - null")
+  gam <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re"),
+      family = Gamma(link = "log"),
+      data = df)
+
+  m_list$gam_0 <- gam
+  write_rds(m_list, outname)
+  message("   Done")
+  return(gam)
+}
+
+
+fit_glm_individual <- function(df, outname){
+
+  require(lme4)
+  m_list <- list()
+
+  message("  GLM - return_interval")
+  m_list$glm_1.1 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + return_interval,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - med_density")
+  m_list$glm_1.2 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + med_density,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - delta")
+  m_list$glm_1.3 <-
+    glmer(nrmse ~ (1 | methods_used) + delta,
+          family = Gamma(link = "log"),
+          data = df)
+  message("   Done")
+
+  message("  GLM - n_reps")
+  m_list$glm_1.4 <-
+    glmer(nrmse ~ (1 | methods_used) + n_reps,
+          family = Gamma(link = "log"),
+          data = df)
+  message("   Done")
+
+  message("  GLM - n_methods_used")
+  m_list$glm_1.5 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + n_methods_used,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - sum_take_density")
+  m_list$glm_1.6 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + sum_take_density,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - property_area")
+  m_list$glm_1.7 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + property_area,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - mean_effort")
+  m_list$glm_1.8 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + mean_effort,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  message("  GLM - mean_trap_count")
+  m_list$glm_1.9 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + mean_trap_count,
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  write_rds(m_list, outname)
+  message("GLM individual models done")
+  return(m_list)
+
+}
+
+fit_gam_individual <- function(df, outname){
+
+  require(mgcv)
+  m_list <- list()
+
+  message("  GAM - return_interval")
+  m_list$gam_1.1 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(return_interval, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - med_density")
+  m_list$gam_1.2 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(med_density, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - delta")
+  m_list$gam_1.3 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(delta, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - n_reps")
+  m_list$gam_1.4 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(n_reps, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - sum_take_density")
+  m_list$gam_1.5 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(sum_take_density, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - property_area")
+  m_list$gam_1.6 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(property_area, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - mean_effort")
+  m_list$gam_1.7 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(mean_effort, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+  message("  GAM - mean_trap_count")
+  m_list$gam_1.8 <-
+    gam(
+      nrmse ~ s(methods_used, bs = "re") + s(mean_trap_count, bs = "cr"),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  message("   Done")
+
+  write_rds(m_list, outname)
+  message("GAM individual models done")
+  return(m_list)
+}
+
+
+# gam <- gam(nrmse ~
+#              s(methods_used, bs = "re") +
+#              s(return_interval, bs = "cr") +
+#              s(med_density, bs = "cr") +
+#              s(delta, bs = "cr") +
+#              s(n_reps, bs = "cr") +
+#              s(n_methods_used, bs = "cr") +
+#              s(sum_take_density, bs = "cr") +
+#              s(property_area, bs = "cr") +
+#              s(mean_effort, bs = "cr") +
+#              s(mean_trap_count, bs = "cr"),
+#            family = Gamma(link = "log"),
+#            data = df))
