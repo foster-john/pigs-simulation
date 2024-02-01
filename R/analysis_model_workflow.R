@@ -186,6 +186,7 @@ data <- data_final_join |>
   # ungroup() |>
   mutate(med_density = rescale_variable(med_density),
          return_interval = rescale_variable(return_interval),
+         delta = rescale_variable(delta),
          n_methods_used = rescale_variable(n_methods_used),
          sum_take_density = rescale_variable(sum_take_density),
          property_area = rescale_variable(property_area),
@@ -221,8 +222,8 @@ source("R/functions_analysis.R")
 # All individual effects ----
 #####################################
 
-# file_dest <- file.path(path, "glmIndividual.rds")
-# fit_glm_individual(data, file_dest)
+file_dest <- file.path(path, "glmIndividual.rds")
+fit_glm_individual(data, file_dest)
 #
 # file_dest <- file.path(path, "gamIndividual.rds")
 # fit_gam_individual(data, file_dest)
@@ -238,8 +239,8 @@ source("R/functions_analysis.R")
 # GLM total take as density + property area + individual effects ----
 #####################################
 
-file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
-fit_glm_sum_take_area(data, file_dest)
+# file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
+# fit_glm_sum_take_area(data, file_dest)
 
 
 
