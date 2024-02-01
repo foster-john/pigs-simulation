@@ -231,8 +231,15 @@ source("R/functions_analysis.R")
 # GLM total take as density + individual effects ----
 #####################################
 
-file_dest <- file.path(path, "glmSumTakeIndividual.rds")
-fit_glm_sum_take(data, file_dest)
+# file_dest <- file.path(path, "glmSumTakeIndividual.rds")
+# fit_glm_sum_take(data, file_dest)
+
+#####################################
+# GLM total take as density + property area + individual effects ----
+#####################################
+
+file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
+fit_glm_sum_take_area(data, file_dest)
 
 
 
