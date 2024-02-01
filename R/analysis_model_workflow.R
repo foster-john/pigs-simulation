@@ -112,26 +112,6 @@ density_obs <- density |>
   group_by(property_id) |>
   mutate(delta = c(0, diff(PPNum)))
 
-f_name <- "method_parameter_lookup.rds"
-all_methods <- map_files2(density_dirs, f_name)  |>
-  pivot_longer(cols = c(p_unique, rho, gamma),
-               names_to = "parameter_name",
-               values_to = "parameter_value") |>
-  filter(!is.na(parameter_value))
-
-take_effort_summary <- all_take |>
-  group_by(property_id, PPNum, method) |>
-  summarise(mean_effort_per = mean(effort_per),
-            sum_effort_per = sum(effort_per),
-            mean_effort = mean(effort),
-            sum_effort = sum(effort),
-            mean_trap_count = mean(trap_count),
-            sum_trap_count = sum(trap_count),
-            n_reps = n())
-
-density_obs_take <- left_join(take_effort_summary, density_obs)
-density_obs_take_params <- left_join(density_obs_take, all_methods, relationship = "many-to-many")
-
 n_methods_pp <- all_take |>
   select(property_id, PPNum, method) |>
   distinct() |>
@@ -154,223 +134,75 @@ n_return <- all_take |>
   rename(methods_used = method) |>
   left_join(n_methods_pp)
 
-data_final_join <- left_join(density_obs_take, n_return)
+take_joint_return <- left_join(all_take, n_return)
+
+take_effort_summary <- take_joint_return |>
+  group_by(property_id, PPNum, methods_used) |>
+  summarise(mean_effort_per_unit = mean(effort_per),
+            sum_effort_per_unit = sum(effort_per),
+            mean_effort = mean(effort),
+            sum_effort = sum(effort),
+            mean_unit_count = mean(trap_count),
+            sum_unit_count = sum(trap_count),
+            n_reps_pp = n()) |>
+  ungroup()
+
+data_final_join <- left_join(density_obs, take_effort_summary)
 
 rescale_variable <- function(x) (x - mean(x)) / (2 * sd(x))
 
 outlier <- data_final_join |>
   filter(density > 0) |>
   pull(nm_rmse_abundance) |>
-  quantile(0.999)
+  quantile(0.995)
 
 data <- data_final_join |>
   ungroup() |>
   filter(density > 0,
          nm_rmse_abundance < outlier) |>
-  rename(nrmse = nm_rmse_abundance) |>
-  select(-abundance, -nm_rmse_density, -rmse_abundance, -rmse_density) |>
-  mutate(method = as.factor(method),
-         methods_used = as.factor(methods_used),
-         property_id = as.factor(property_id)) |>
-  group_by(method) |>
-  mutate(mean_effort_method = rescale_variable(mean_effort),
-         sum_effort_method = rescale_variable(sum_effort),
-         mean_effort_per_method = rescale_variable(mean_effort_per),
-         sum_effort_per_method = rescale_variable(sum_effort_per),
-         mean_trap_count_method = rescale_variable(mean_trap_count),
-         sum_trap_count_method = rescale_variable(sum_trap_count),
-         n_reps_method = rescale_variable(n_reps)) |>
-  ungroup() |>
-  group_by(methods_used) |>
-  mutate(method_nested = as.factor(method)) |>
-  ungroup() |>
-  mutate(med_density = rescale_variable(med_density),
-         return_interval = rescale_variable(return_interval),
-         delta = rescale_variable(delta),
-         n_methods_used = rescale_variable(n_methods_used),
+  select(property_id, PPNum, property_area, med_density,
+         nm_rmse_density, mbias_density, mpe_density,
+         sum_take_density, delta, methods_used, mean_effort_per_unit,
+         sum_effort_per_unit, mean_effort, sum_effort, mean_unit_count,
+         sum_unit_count, n_reps_pp) |>
+  distinct() |>
+  mutate(property_area = rescale_variable(property_area),
+         med_density = rescale_variable(med_density),
          sum_take_density = rescale_variable(sum_take_density),
-         property_area = rescale_variable(property_area),
-         start_density = as.factor(start_density),
-         mean_effort = rescale_variable(mean_effort),
-         sum_effort = rescale_variable(sum_effort),
-         mean_effort_per = rescale_variable(mean_effort_per),
-         sum_effort_per = rescale_variable(sum_effort_per),
-         mean_trap_count = rescale_variable(mean_trap_count),
-         sum_trap_count = rescale_variable(sum_trap_count),
-         n_reps = rescale_variable(n_reps))
+         delta = rescale_variable(delta),
+         methods_used = as.factor(methods_used),
+         mean_effort_per_unit = rescale_variable(mean_effort_per_unit),
+         sum_effort_per_unit = rescale_variable(sum_effort_per_unit),
+         mean_effort_raw = rescale_variable(mean_effort),
+         sum_effort_raw = rescale_variable(sum_effort),
+         mean_unit_count = rescale_variable(mean_unit_count),
+         sum_unit_count = rescale_variable(sum_unit_count),
+         n_reps_pp = rescale_variable(n_reps_pp)) |>
+  select(-mean_effort, -sum_effort)
+
+
+
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GLMs", model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
+models <- expand_grid(
+  y = c("nrmse", "bias", "mpe"),
+  effort = c("per_unit", "raw"),
+  agg = c("mean", "sum")
+)
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
 
 source("R/functions_analysis.R")
 
-if(task_id == 1){
-
-  file_dest <- file.path(path, "glmNull.rds")
-  fit_glm_null(data, file_dest)
-
-} else if(task_id == 2){
-
-  file_dest <- file.path(path, "glmMethod.rds")
-  fit_glm_method(data, file_dest)
-
-} else if(task_id == 3){
-
-  file_dest <- file.path(path, "glmIndividual.rds")
-  fit_glm_individual(data, file_dest)
-
-} else if(task_id == 4){
-  file_dest <- file.path(path, "glmAll.rds")
-  fit_glm_all(data, file_dest)
-
-} else if(task_id == 5){
-
-  file_dest <- file.path(path, "glmSumTakeIndividual.rds")
-  fit_glm_sum_take(data, file_dest)
-
-} else if(task_id == 6){
-
-  file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
-  fit_glm_sum_take_area(data, file_dest)
-
-}
-
-
-# file_dest <- file.path(path, "gamNull.rds")
-# fit_gam_null(data, file_dest)
-
-# file_dest <- file.path(path, "gamIndividual.rds")
-# fit_gam_individual(data, file_dest)
-
-
-
-# file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
-# fit_glm_sum_take_area(data, file_dest)
-
-
-
-
-
-
-
-
-
-
-
-# if(task_id == 0){
-#
-#   message("  GAM")
-#   gam <- gam(nrmse ~
-#                s(methods_used, bs = "re") +
-#                s(return_interval, bs = "cr") +
-#                s(med_density, bs = "cr") +
-#                s(delta, bs = "cr") +
-#                s(n_reps, bs = "cr") +
-#                s(n_methods_used, bs = "cr") +
-#                s(sum_take_density, bs = "cr") +
-#                s(property_area, bs = "cr") +
-#                s(sum_effort, bs = "cr") +
-#                s(sum_trap_count, bs = "cr"),
-#              family = Gamma(link = "log"),
-#              data = data)
-#   m_list$glm <- gam
-#
-#   message("    -> done")
-#
-# } else if(task_id == 3){
-#
-#   ## All individual effects +
-#   ## mean effort and mean trap count in a PP for each method +
-#   ## random intercept by method
-#   message("\n=== Model 3 ===")
-#   message("  GLM")
-#   m_list <- list()
-#   glm <- glmer(nrmse ~
-#                  (1 | methods_used) +
-#                  (1 | method) +
-#                  return_interval +
-#                  med_density +
-#                  delta +
-#                  n_reps +
-#                  n_methods_used +
-#                  sum_take_density +
-#                  property_area +
-#                  mean_effort_method +
-#                  mean_trap_count_method,
-#                family = Gamma(link = "log"),
-#                data = data)
-#   m_list$glm <- glm
-#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-#   message("    -> done")
-#
-#   message("  GAM")
-#   gam <- gam(nrmse ~
-#                s(methods_used, bs = "re") +
-#                s(method, bs = "re") +
-#                s(return_interval, bs = "cr") +
-#                s(med_density, bs = "cr") +
-#                s(delta, bs = "cr") +
-#                s(n_reps, bs = "cr") +
-#                s(n_methods_used, bs = "cr") +
-#                s(sum_take_density, bs = "cr") +
-#                s(property_area, bs = "cr") +
-#                s(mean_effort_method, bs = "cr") +
-#                s(mean_trap_count_method, bs = "cr"),
-#              family = Gamma(link = "log"),
-#              data = data)
-#   m_list$glm <- gam
-#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-#   message("    -> done")
-#
-# } else if(task_id == 4){
-#
-#   ## All individual effects +
-#   ## sum effort and sum trap count in a PP for each method +
-#   ## random intercept by method
-#   message("\n=== Model 4 ===")
-#   message("  GLM")
-#   m_list <- list()
-#   glm <- glmer(nrmse ~
-#                  (1 | methods_used) +
-#                  (1 | method) +
-#                  return_interval +
-#                  med_density +
-#                  delta +
-#                  n_reps +
-#                  n_methods_used +
-#                  sum_take_density +
-#                  property_area +
-#                  sum_effort_method +
-#                  sum_trap_count_method,
-#                family = Gamma(link = "log"),
-#                data = data)
-#   m_list$glm <- glm
-#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-#   message("    -> done")
-#
-#   message("  GAM")
-#   gam <- gam(nrmse ~
-#                s(methods_used, bs = "re") +
-#                s(method, bs = "re") +
-#                s(return_interval, bs = "cr") +
-#                s(med_density, bs = "cr") +
-#                s(delta, bs = "cr") +
-#                s(n_reps, bs = "cr") +
-#                s(n_methods_used, bs = "cr") +
-#                s(sum_take_density, bs = "cr") +
-#                s(property_area, bs = "cr") +
-#                s(sum_effort_method, bs = "cr") +
-#                s(sum_trap_count_method, bs = "cr"),
-#              family = Gamma(link = "log"),
-#              data = data)
-#   m_list$glm <- gam
-#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-#   message("    -> done")
-#
-# }
-
+model_to_run <- models |> slice(task_id)
+fit_glm_all(
+  data = data,
+  y = pull(model_to_run, y),
+  effort = pull(model_to_run, effort),
+  agg = pull(model_to_run, agg),
+  path = path
+)
 
