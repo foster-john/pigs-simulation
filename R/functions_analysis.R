@@ -249,8 +249,7 @@ fit_glm_sum_take_area <- function(df, outname){
         return_interval +
         I(sum_take_density * property_area) +
         I(sum_take_density * return_interval) +
-        I(property_area * return_interval) +
-        I(sum_take * property_area * return_interval),
+        I(property_area * return_interval),
       family = Gamma(link = "log"),
       data = df
     )
@@ -266,7 +265,6 @@ fit_glm_sum_take_area <- function(df, outname){
         I(sum_take_density * property_area) +
         I(sum_take_density * delta) +
         I(property_area * delta),
-        # I(sum_take * property_area * delta),
       family = Gamma(link = "log"),
       data = df
     )
@@ -281,8 +279,7 @@ fit_glm_sum_take_area <- function(df, outname){
         n_reps +
         I(sum_take_density * property_area) +
         I(sum_take_density * n_reps) +
-        I(property_area * n_reps) +
-        I(sum_take * property_area * n_reps),
+        I(property_area * n_reps),
       family = Gamma(link = "log"),
       data = df
     )
@@ -297,8 +294,7 @@ fit_glm_sum_take_area <- function(df, outname){
         n_methods_used +
         I(sum_take_density * property_area) +
         I(sum_take_density * n_methods_used) +
-        I(property_area * n_methods_used) +
-        I(sum_take * property_area * n_methods_used),
+        I(property_area * n_methods_used),
       family = Gamma(link = "log"),
       data = df
     )
@@ -313,8 +309,7 @@ fit_glm_sum_take_area <- function(df, outname){
         sum_effort +
         I(sum_take_density * property_area) +
         I(sum_take_density * sum_effort) +
-        I(property_area * sum_effort) +
-        I(sum_take * property_area * sum_effort),
+        I(property_area * sum_effort),
       family = Gamma(link = "log"),
       data = df
     )
@@ -329,8 +324,7 @@ fit_glm_sum_take_area <- function(df, outname){
         sum_trap_count +
         I(sum_take_density * property_area) +
         I(sum_take_density * sum_trap_count) +
-        I(property_area * sum_trap_count) +
-        I(sum_take * property_area * sum_trap_count),
+        I(property_area * sum_trap_count),
       family = Gamma(link = "log"),
       data = df
     )
