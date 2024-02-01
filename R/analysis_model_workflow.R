@@ -222,8 +222,8 @@ source("R/functions_analysis.R")
 # All individual effects ----
 #####################################
 
-file_dest <- file.path(path, "glmIndividual.rds")
-fit_glm_individual(data, file_dest)
+# file_dest <- file.path(path, "glmIndividual.rds")
+# fit_glm_individual(data, file_dest)
 #
 # file_dest <- file.path(path, "gamIndividual.rds")
 # fit_gam_individual(data, file_dest)
@@ -232,8 +232,8 @@ fit_glm_individual(data, file_dest)
 # GLM total take as density + individual effects ----
 #####################################
 
-# file_dest <- file.path(path, "glmSumTakeIndividual.rds")
-# fit_glm_sum_take(data, file_dest)
+file_dest <- file.path(path, "glmSumTakeIndividual.rds")
+fit_glm_sum_take(data, file_dest)
 
 #####################################
 # GLM total take as density + property area + individual effects ----
