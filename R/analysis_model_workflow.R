@@ -232,6 +232,11 @@ if(task_id == 1){
   file_dest <- file.path(path, "glmSumTakeIndividual.rds")
   fit_glm_sum_take(data, file_dest)
 
+} else if(task_id == 6){
+
+  file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
+  fit_glm_sum_take_area(data, file_dest)
+
 }
 
 
