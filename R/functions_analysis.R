@@ -265,8 +265,8 @@ fit_glm_sum_take_area <- function(df, outname){
         delta +
         I(sum_take_density * property_area) +
         I(sum_take_density * delta) +
-        I(property_area * delta) +
-        I(sum_take * property_area * delta),
+        I(property_area * delta),
+        # I(sum_take * property_area * delta),
       family = Gamma(link = "log"),
       data = df
     )
