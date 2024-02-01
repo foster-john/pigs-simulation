@@ -285,23 +285,8 @@ fit_glm_sum_take_area <- function(df, outname){
     )
   message("   Done")
 
-  message("  GLM - sum_take_density + property area + n_methods_used")
-  m_list$glm_3.4 <-
-    glmer(
-      nrmse ~ (1 | methods_used) +
-        sum_take_density +
-        property_area +
-        n_methods_used +
-        I(sum_take_density * property_area) +
-        I(sum_take_density * n_methods_used) +
-        I(property_area * n_methods_used),
-      family = Gamma(link = "log"),
-      data = df
-    )
-  message("   Done")
-
   message("  GLM - sum_take_density + property area + sum_effort")
-  m_list$glm_3.5 <-
+  m_list$glm_3.4 <-
     glmer(
       nrmse ~ (1 | methods_used) +
         sum_take_density +
@@ -316,7 +301,7 @@ fit_glm_sum_take_area <- function(df, outname){
   message("   Done")
 
   message("  GLM - sum_take_density + property area + sum_trap_count")
-  m_list$glm_3.6 <-
+  m_list$glm_3.5 <-
     glmer(
       nrmse ~ (1 | methods_used) +
         sum_take_density +
