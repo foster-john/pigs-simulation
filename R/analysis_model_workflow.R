@@ -156,7 +156,7 @@ n_return <- all_take |>
 
 data_final_join <- left_join(density_obs_take, n_return)
 
-rescale_variable <- function(x) (x - mean(x)) / sd(x)
+rescale_variable <- function(x) (x - mean(x)) / (2 * sd(x))
 
 outlier <- data_final_join |>
   filter(density > 0) |>
@@ -181,9 +181,9 @@ data <- data_final_join |>
          sum_trap_count_method = rescale_variable(sum_trap_count),
          n_reps_method = rescale_variable(n_reps)) |>
   ungroup() |>
-  # group_by(methods_used) |>
-  # mutate() |>
-  # ungroup() |>
+  group_by(methods_used) |>
+  mutate(method_nested = as.factor(method)) |>
+  ungroup() |>
   mutate(med_density = rescale_variable(med_density),
          return_interval = rescale_variable(return_interval),
          delta = rescale_variable(delta),
@@ -203,44 +203,40 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GLMs", model_dir
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 
-# args <- commandArgs(trailingOnly = TRUE)
-# task_id <- as.numeric(args[1])
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- as.numeric(args[1])
 
 source("R/functions_analysis.R")
 
-#####################################
-# Null model ----
-#####################################
+if(task_id == 1){
 
-# file_dest <- file.path(path, "glmNull.rds")
-# fit_glm_null(data, file_dest)
-#
+  file_dest <- file.path(path, "glmNull.rds")
+  fit_glm_null(data, file_dest)
+
+} else if(task_id == 2){
+
+  file_dest <- file.path(path, "glmMethod.rds")
+  fit_glm_method(data, file_dest)
+
+} else if(task_id == 3){
+
+  file_dest <- file.path(path, "glmIndividual.rds")
+  fit_glm_individual(data, file_dest)
+
+}
+
+
 # file_dest <- file.path(path, "gamNull.rds")
 # fit_gam_null(data, file_dest)
 
-#####################################
-# All individual effects ----
-#####################################
-
-# file_dest <- file.path(path, "glmIndividual.rds")
-# fit_glm_individual(data, file_dest)
-#
 # file_dest <- file.path(path, "gamIndividual.rds")
 # fit_gam_individual(data, file_dest)
-
-#####################################
-# GLM total take as density + individual effects ----
-#####################################
 
 # file_dest <- file.path(path, "glmSumTakeIndividual.rds")
 # fit_glm_sum_take(data, file_dest)
 
-#####################################
-# GLM total take as density + property area + individual effects ----
-#####################################
-
-file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
-fit_glm_sum_take_area(data, file_dest)
+# file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
+# fit_glm_sum_take_area(data, file_dest)
 
 
 

@@ -7,16 +7,56 @@ fit_glm_null <- function(df, outname){
   m_list <- list()
 
   message("  GLM - null")
-  glm_0 <-
+  m_list$glm_0.1 <-
     glmer(
       nrmse ~ (1 | methods_used),
       family = Gamma(link = "log"),
       data = df
     )
-  m_list$glm_0 <- glm_0
+  m_list$glm_0.2 <-
+    glmer(
+      nrmse ~ (1 | method),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  m_list$glm_0.3 <-
+    glmer(
+      nrmse ~ (1 | methods_used) + (1 | method),
+      family = Gamma(link = "log"),
+      data = df
+    )
+
   write_rds(m_list, outname)
   message("   Done")
-  return(glm_0)
+  return(m_list)
+}
+
+fit_glm_method <- function(df, outname){
+
+  require(lme4)
+  m_list <- list()
+
+  message("  GLM - null")
+  m_list$glm_1.1 <-
+    glmer(
+      nrmse ~ (1 | method) +
+        (mean_effort_method | method) +
+        (mean_trap_count_method | method),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  m_list$glm_1.2 <-
+    glmer(
+      nrmse ~ (1 | method) +
+        (sum_effort_method | method) +
+        (sum_trap_count_method | method),
+      family = Gamma(link = "log"),
+      data = df
+    )
+
+  write_rds(m_list, outname)
+  message("   Done")
+  return(m_list)
 }
 
 fit_gam_null <- function(df, outname){
