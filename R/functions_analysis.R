@@ -35,45 +35,48 @@ fit_glm_all <- function(df, y, effort, agg, path){
   message("effort = ", effort)
   message("agg = ", agg)
 
-  glmm <-
-    glmer(
-      y ~ (1 | methods_used) +
-        property_area +
-        med_density +
-        total_take_density +
-        delta +
-        unit_count +
-        n_reps_pp +
-        effort +
-        I(property_area * med_density) +
-        I(property_area * total_take_density) +
-        I(property_area * delta) +
-        I(property_area * unit_count) +
-        I(property_area * n_reps_pp) +
-        I(property_area * effort) +
-        I(med_density * total_take_density) +
-        I(med_density * delta) +
-        I(med_density * unit_count) +
-        I(med_density * n_reps_pp) +
-        I(med_density * effort) +
-        I(total_take_density * delta) +
-        I(total_take_density * unit_count) +
-        I(total_take_density * n_reps_pp) +
-        I(total_take_density * effort) +
-        I(delta * unit_count) +
-        I(delta * n_reps_pp) +
-        I(delta * effort) +
-        I(unit_count * n_reps_pp) +
-        I(unit_count * effort) +
-        I(n_reps_pp * effort),
-      family = Gamma(link = "log"),
-      data = data
-    )
+  f <- formula(
+    y ~ (1 | methods_used) +
+      property_area +
+      med_density +
+      total_take_density +
+      delta +
+      unit_count +
+      n_reps_pp +
+      effort +
+      I(property_area * med_density) +
+      I(property_area * total_take_density) +
+      I(property_area * delta) +
+      I(property_area * unit_count) +
+      I(property_area * n_reps_pp) +
+      I(property_area * effort) +
+      I(med_density * total_take_density) +
+      I(med_density * delta) +
+      I(med_density * unit_count) +
+      I(med_density * n_reps_pp) +
+      I(med_density * effort) +
+      I(total_take_density * delta) +
+      I(total_take_density * unit_count) +
+      I(total_take_density * n_reps_pp) +
+      I(total_take_density * effort) +
+      I(delta * unit_count) +
+      I(delta * n_reps_pp) +
+      I(delta * effort) +
+      I(unit_count * n_reps_pp) +
+      I(unit_count * effort) +
+      I(n_reps_pp * effort)
+  )
+
+  if(y == "bias") {
+    fit <- lmer(f, data = data)
+  } else {
+    fit <- glmer(f , family = Gamma(link = "log"), data = data)
+  }
 
   filename <- paste(y, effort, agg, sep = "-")
   outname <- file.path(path, paste0(filename, ".rds"))
-  write_rds(glm, outname)
+  write_rds(fit, outname)
   message("  Done")
-  return(glmm)
+  return(fit)
 }
 
