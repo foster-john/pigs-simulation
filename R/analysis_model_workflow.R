@@ -168,7 +168,7 @@ data <- data_final_join |>
   distinct() |>
   mutate(property_area = rescale_variable(property_area),
          med_density = rescale_variable(med_density),
-         sum_take_density = rescale_variable(sum_take_density),
+         total_take_density = rescale_variable(sum_take_density),
          delta = rescale_variable(delta),
          methods_used = as.factor(methods_used),
          mean_effort_per_unit = rescale_variable(mean_effort_per_unit),
@@ -178,7 +178,7 @@ data <- data_final_join |>
          mean_unit_count = rescale_variable(mean_unit_count),
          sum_unit_count = rescale_variable(sum_unit_count),
          n_reps_pp = rescale_variable(n_reps_pp)) |>
-  select(-mean_effort, -sum_effort)
+  select(-mean_effort, -sum_effort, -sum_take_density)
 
 
 
