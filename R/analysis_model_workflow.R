@@ -199,7 +199,7 @@ source("R/functions_analysis.R")
 
 model_to_run <- models |> slice(task_id)
 fit_glm_all(
-  data = data,
+  df = data,
   y = pull(model_to_run, y),
   effort = pull(model_to_run, effort),
   agg = pull(model_to_run, agg),
