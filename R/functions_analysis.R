@@ -361,6 +361,67 @@ fit_glm_sum_take_area <- function(df, outname){
 
 }
 
+fit_glm_all <- function(df, outname){
+
+  require(lme4)
+  m_list <- list()
+
+  message("  GLM - ALL")
+  m_list$glm_5 <-
+    glmer(
+      nrmse ~ (1 | methods_used) +
+        sum_take_density +
+        med_density +
+        property_area +
+        return_interval +
+        delta +
+        n_reps +
+        sum_trap_count +
+        sum_effort +
+        n_methods_used +
+        I(sum_take_density * med_density) +
+        I(sum_take_density * property_area) +
+        I(sum_take_density * return_interval) +
+        I(sum_take_density * delta) +
+        I(sum_take_density * n_reps) +
+        I(sum_take_density * sum_trap_count) +
+        I(sum_take_density * sum_effort) +
+        I(sum_take_density * n_methods_used) +
+        I(med_density * property_area) +
+        I(med_density * return_interval) +
+        I(med_density * delta) +
+        I(med_density * n_reps) +
+        I(med_density * sum_trap_count) +
+        I(med_density * sum_effort) +
+        I(med_density * n_methods_used) +
+        I(property_area * return_interval) +
+        I(property_area * delta) +
+        I(property_area * n_reps) +
+        I(property_area * sum_trap_count) +
+        I(property_area * sum_effort) +
+        I(property_area * n_methods_used) +
+        I(return_interval * delta) +
+        I(return_interval * n_reps) +
+        I(return_interval * sum_trap_count) +
+        I(return_interval * sum_effort) +
+        I(return_interval * n_methods_used) +
+        I(delta * n_reps) +
+        I(delta * sum_trap_count) +
+        I(delta * sum_effort) +
+        I(delta * n_methods_used) +
+        I(n_reps * sum_trap_count) +
+        I(n_reps * sum_effort) +
+        I(n_reps * n_methods_used) +
+        I(sum_trap_count * sum_effort) +
+        I(sum_trap_count * n_methods_used) +
+        I(sum_effort * n_methods_used),
+      family = Gamma(link = "log"),
+      data = df
+    )
+  write_rds(m_list, outname)
+  message("  Done")
+  return(m_list)
+}
 
 fit_gam_individual <- function(df, outname){
 

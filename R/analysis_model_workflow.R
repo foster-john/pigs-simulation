@@ -223,6 +223,9 @@ if(task_id == 1){
   file_dest <- file.path(path, "glmIndividual.rds")
   fit_glm_individual(data, file_dest)
 
+} else if(task_id == 4){
+  file_dest <- file.path(path, "glmAll.rds")
+  fit_glm_all(data, file_dest)
 }
 
 
