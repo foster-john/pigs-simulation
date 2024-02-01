@@ -232,15 +232,15 @@ source("R/functions_analysis.R")
 # GLM total take as density + individual effects ----
 #####################################
 
-file_dest <- file.path(path, "glmSumTakeIndividual.rds")
-fit_glm_sum_take(data, file_dest)
+# file_dest <- file.path(path, "glmSumTakeIndividual.rds")
+# fit_glm_sum_take(data, file_dest)
 
 #####################################
 # GLM total take as density + property area + individual effects ----
 #####################################
 
-# file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
-# fit_glm_sum_take_area(data, file_dest)
+file_dest <- file.path(path, "glmSumTakeAreaIndividual.rds")
+fit_glm_sum_take_area(data, file_dest)
 
 
 
@@ -252,116 +252,116 @@ fit_glm_sum_take(data, file_dest)
 
 
 
-if(task_id == 0){
-
-  message("  GAM")
-  gam <- gam(nrmse ~
-               s(methods_used, bs = "re") +
-               s(return_interval, bs = "cr") +
-               s(med_density, bs = "cr") +
-               s(delta, bs = "cr") +
-               s(n_reps, bs = "cr") +
-               s(n_methods_used, bs = "cr") +
-               s(sum_take_density, bs = "cr") +
-               s(property_area, bs = "cr") +
-               s(sum_effort, bs = "cr") +
-               s(sum_trap_count, bs = "cr"),
-             family = Gamma(link = "log"),
-             data = data)
-  m_list$glm <- gam
-
-  message("    -> done")
-
-} else if(task_id == 3){
-
-  ## All individual effects +
-  ## mean effort and mean trap count in a PP for each method +
-  ## random intercept by method
-  message("\n=== Model 3 ===")
-  message("  GLM")
-  m_list <- list()
-  glm <- glmer(nrmse ~
-                 (1 | methods_used) +
-                 (1 | method) +
-                 return_interval +
-                 med_density +
-                 delta +
-                 n_reps +
-                 n_methods_used +
-                 sum_take_density +
-                 property_area +
-                 mean_effort_method +
-                 mean_trap_count_method,
-               family = Gamma(link = "log"),
-               data = data)
-  m_list$glm <- glm
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-  message("  GAM")
-  gam <- gam(nrmse ~
-               s(methods_used, bs = "re") +
-               s(method, bs = "re") +
-               s(return_interval, bs = "cr") +
-               s(med_density, bs = "cr") +
-               s(delta, bs = "cr") +
-               s(n_reps, bs = "cr") +
-               s(n_methods_used, bs = "cr") +
-               s(sum_take_density, bs = "cr") +
-               s(property_area, bs = "cr") +
-               s(mean_effort_method, bs = "cr") +
-               s(mean_trap_count_method, bs = "cr"),
-             family = Gamma(link = "log"),
-             data = data)
-  m_list$glm <- gam
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-} else if(task_id == 4){
-
-  ## All individual effects +
-  ## sum effort and sum trap count in a PP for each method +
-  ## random intercept by method
-  message("\n=== Model 4 ===")
-  message("  GLM")
-  m_list <- list()
-  glm <- glmer(nrmse ~
-                 (1 | methods_used) +
-                 (1 | method) +
-                 return_interval +
-                 med_density +
-                 delta +
-                 n_reps +
-                 n_methods_used +
-                 sum_take_density +
-                 property_area +
-                 sum_effort_method +
-                 sum_trap_count_method,
-               family = Gamma(link = "log"),
-               data = data)
-  m_list$glm <- glm
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-  message("  GAM")
-  gam <- gam(nrmse ~
-               s(methods_used, bs = "re") +
-               s(method, bs = "re") +
-               s(return_interval, bs = "cr") +
-               s(med_density, bs = "cr") +
-               s(delta, bs = "cr") +
-               s(n_reps, bs = "cr") +
-               s(n_methods_used, bs = "cr") +
-               s(sum_take_density, bs = "cr") +
-               s(property_area, bs = "cr") +
-               s(sum_effort_method, bs = "cr") +
-               s(sum_trap_count_method, bs = "cr"),
-             family = Gamma(link = "log"),
-             data = data)
-  m_list$glm <- gam
-  write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
-  message("    -> done")
-
-}
+# if(task_id == 0){
+#
+#   message("  GAM")
+#   gam <- gam(nrmse ~
+#                s(methods_used, bs = "re") +
+#                s(return_interval, bs = "cr") +
+#                s(med_density, bs = "cr") +
+#                s(delta, bs = "cr") +
+#                s(n_reps, bs = "cr") +
+#                s(n_methods_used, bs = "cr") +
+#                s(sum_take_density, bs = "cr") +
+#                s(property_area, bs = "cr") +
+#                s(sum_effort, bs = "cr") +
+#                s(sum_trap_count, bs = "cr"),
+#              family = Gamma(link = "log"),
+#              data = data)
+#   m_list$glm <- gam
+#
+#   message("    -> done")
+#
+# } else if(task_id == 3){
+#
+#   ## All individual effects +
+#   ## mean effort and mean trap count in a PP for each method +
+#   ## random intercept by method
+#   message("\n=== Model 3 ===")
+#   message("  GLM")
+#   m_list <- list()
+#   glm <- glmer(nrmse ~
+#                  (1 | methods_used) +
+#                  (1 | method) +
+#                  return_interval +
+#                  med_density +
+#                  delta +
+#                  n_reps +
+#                  n_methods_used +
+#                  sum_take_density +
+#                  property_area +
+#                  mean_effort_method +
+#                  mean_trap_count_method,
+#                family = Gamma(link = "log"),
+#                data = data)
+#   m_list$glm <- glm
+#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
+#   message("    -> done")
+#
+#   message("  GAM")
+#   gam <- gam(nrmse ~
+#                s(methods_used, bs = "re") +
+#                s(method, bs = "re") +
+#                s(return_interval, bs = "cr") +
+#                s(med_density, bs = "cr") +
+#                s(delta, bs = "cr") +
+#                s(n_reps, bs = "cr") +
+#                s(n_methods_used, bs = "cr") +
+#                s(sum_take_density, bs = "cr") +
+#                s(property_area, bs = "cr") +
+#                s(mean_effort_method, bs = "cr") +
+#                s(mean_trap_count_method, bs = "cr"),
+#              family = Gamma(link = "log"),
+#              data = data)
+#   m_list$glm <- gam
+#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
+#   message("    -> done")
+#
+# } else if(task_id == 4){
+#
+#   ## All individual effects +
+#   ## sum effort and sum trap count in a PP for each method +
+#   ## random intercept by method
+#   message("\n=== Model 4 ===")
+#   message("  GLM")
+#   m_list <- list()
+#   glm <- glmer(nrmse ~
+#                  (1 | methods_used) +
+#                  (1 | method) +
+#                  return_interval +
+#                  med_density +
+#                  delta +
+#                  n_reps +
+#                  n_methods_used +
+#                  sum_take_density +
+#                  property_area +
+#                  sum_effort_method +
+#                  sum_trap_count_method,
+#                family = Gamma(link = "log"),
+#                data = data)
+#   m_list$glm <- glm
+#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
+#   message("    -> done")
+#
+#   message("  GAM")
+#   gam <- gam(nrmse ~
+#                s(methods_used, bs = "re") +
+#                s(method, bs = "re") +
+#                s(return_interval, bs = "cr") +
+#                s(med_density, bs = "cr") +
+#                s(delta, bs = "cr") +
+#                s(n_reps, bs = "cr") +
+#                s(n_methods_used, bs = "cr") +
+#                s(sum_take_density, bs = "cr") +
+#                s(property_area, bs = "cr") +
+#                s(sum_effort_method, bs = "cr") +
+#                s(sum_trap_count_method, bs = "cr"),
+#              family = Gamma(link = "log"),
+#              data = data)
+#   m_list$glm <- gam
+#   write_rds(m_list, file.path(path, paste0("m", task_id, ".rds")))
+#   message("    -> done")
+#
+# }
 
 
