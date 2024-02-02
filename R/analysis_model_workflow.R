@@ -198,11 +198,22 @@ task_id <- as.numeric(args[1])
 source("R/functions_analysis.R")
 
 model_to_run <- models |> slice(task_id)
-fit_glm_all(
+
+y <- pull(model_to_run, y)
+effort <- pull(model_to_run, effort)
+agg <- pull(model_to_run, agg)
+
+fit <- fit_glm_all(
   df = data,
-  y = pull(model_to_run, y),
-  effort = pull(model_to_run, effort),
-  agg = pull(model_to_run, agg),
+  y = y,
+  effort = effort,
+  agg = agg,
   path = path
 )
 
+dd <- MuMIn::dredge(fit)
+filename <- paste(y, effort, agg, sep = "-")
+outname <- file.path(path, paste0(filename, "-dredge.rds"))
+write_rds(fit, outname)
+
+dd
