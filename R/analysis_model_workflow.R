@@ -210,6 +210,8 @@ fit <- fit_glm_all(
   agg = agg,
   path = path
 )
+warnings()
+fit
 
 #  prevent fitting sub-models to different datasets
 oop <- options(na.action = "na.fail")
