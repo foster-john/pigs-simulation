@@ -37,9 +37,9 @@ fit_glm_all <- function(df, y, effort, agg, path){
 
   f <- formula(
     y ~ (1 | methods_used) +
-      (unit_count | methods_used) +
-      (effort | methods_used) +
-      (n_reps_pp | methods_used) +
+      (0 + unit_count | methods_used) +
+      (0 + effort | methods_used) +
+      (0 + n_reps_pp | methods_used) +
       property_area +
       total_take_density +
       delta +
