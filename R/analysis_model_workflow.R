@@ -211,6 +211,9 @@ fit <- fit_glm_all(
   path = path
 )
 
+#  prevent fitting sub-models to different datasets
+oop <- options(na.action = "na.fail")
+
 dd <- MuMIn::dredge(fit)
 filename <- paste(y, effort, agg, sep = "-")
 outname <- file.path(path, paste0(filename, "-dredge.rds"))
