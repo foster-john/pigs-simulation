@@ -180,10 +180,7 @@ data <- data_final_join |>
          n_reps_pp = rescale_variable(n_reps_pp)) |>
   select(-mean_effort, -sum_effort, -sum_take_density, -property_id, -PPNum)
 
-
-
-
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GLMs", model_dir)
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "dredgeGLMs", model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 models <- expand_grid(
@@ -213,12 +210,4 @@ fit <- fit_glm_all(
 warnings()
 fit
 
-#  prevent fitting sub-models to different datasets
-options(na.action = "na.fail")
-
-dd <- MuMIn::dredge(fit)
-filename <- paste(y, effort, agg, sep = "-")
-outname <- file.path(path, paste0(filename, "-dredge.rds"))
-write_rds(dd, outname)
-
-dd
+message("=== DONE ===")
