@@ -188,8 +188,8 @@ if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 models <- expand_grid(
   y = c("nrmse", "bias", "mpe"),
-  effort = c("per_unit", "raw"),
-  agg = c("mean", "sum")
+  effort = "per_unit",
+  agg = "mean"
 )
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -219,6 +219,6 @@ oop <- options(na.action = "na.fail")
 dd <- MuMIn::dredge(fit)
 filename <- paste(y, effort, agg, sep = "-")
 outname <- file.path(path, paste0(filename, "-dredge.rds"))
-write_rds(fit, outname)
+write_rds(dd, outname)
 
 dd

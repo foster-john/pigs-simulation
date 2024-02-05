@@ -35,15 +35,21 @@ fit_glm_all <- function(df, y, effort, agg, path){
   message("effort = ", effort)
   message("agg = ", agg)
 
+  # data |>
+  #   select(effort, unit_count, n_reps_pp) |>
+  #   cor() |>
+  #   print()
+
+
   f <- formula(
     y ~ (1 | methods_used) +
-      (0 + effort | methods_used) +
+      # (0 + effort | methods_used) +
       property_area +
       total_take_density +
       delta +
       unit_count +
       n_reps_pp +
-      # effort +
+      effort +
       I(property_area * total_take_density) +
       I(property_area * delta) +
       I(property_area * unit_count) +
