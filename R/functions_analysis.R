@@ -75,7 +75,7 @@ fit_glm_all <- function(df, y, effort, agg, path){
 
   filename <- paste(y, effort, agg, sep = "-")
   outname <- file.path(path, paste0(filename, ".rds"))
-  write_rds(fit, outname)
+  write_rds(list(fit = fit, data = data), outname)
   message("  Inital fit done")
   message("  Fit warnings:")
   print(warnings())
@@ -83,11 +83,10 @@ fit_glm_all <- function(df, y, effort, agg, path){
   message("Dredge")
   oop <- options(na.action = "na.fail")
   dd <- MuMIn::dredge(fit)
-  
-  filename <- paste(y, effort, agg, sep = "-")
+
   outname <- file.path(path, paste0(filename, "-dredge.rds"))
   write_rds(dd, outname)
- 
+
   message("  Dredge done")
   message("  Dredge warnings:")
   print(warnings())
