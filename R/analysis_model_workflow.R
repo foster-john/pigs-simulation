@@ -178,7 +178,7 @@ data <- data_final_join |>
          mean_unit_count = rescale_variable(mean_unit_count),
          sum_unit_count = rescale_variable(sum_unit_count),
          n_reps_pp = rescale_variable(n_reps_pp)) |>
-  select(-mean_effort, -sum_effort, -sum_take_density)
+  select(-mean_effort, -sum_effort, -sum_take_density, -property_id, -PPNum)
 
 
 
