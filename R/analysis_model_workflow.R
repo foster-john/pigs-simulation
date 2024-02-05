@@ -214,7 +214,7 @@ warnings()
 fit
 
 #  prevent fitting sub-models to different datasets
-oop <- options(na.action = "na.fail")
+options(na.action = "na.fail")
 
 dd <- MuMIn::dredge(fit)
 filename <- paste(y, effort, agg, sep = "-")
