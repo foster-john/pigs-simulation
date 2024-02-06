@@ -94,16 +94,24 @@ fit_glm_all <- function(df, y, effort, agg, path){
   #   print()
 
   if(y == "bias") {
+    n <- lmer(y ~ (1 | methods_used), data = data)
     fit <- lmer(f_bias, data = data)
   } else if(y == "nrmse") {
+    n <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
     fit <- glmer(f_nmrmse , family = Gamma(link = "log"), data = data)
   } else if(y == "mpe") {
+    n <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
     fit <- glmer(f_mpe , family = Gamma(link = "log"), data = data)
   }
 
   filename <- paste(y, effort, agg, sep = "-")
+
+  outname <- file.path(path, paste0(filename, "-null.rds"))
+  write_rds(list(fit = n, data = data), outname)
+
   outname <- file.path(path, paste0(filename, "-cut1.rds"))
   write_rds(list(fit = fit, data = data), outname)
+
   message("  Inital fit done")
   message("  Fit warnings:")
   print(warnings())
