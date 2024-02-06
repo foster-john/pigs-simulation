@@ -103,7 +103,7 @@ fit_glm_all <- function(df, y, vars, path){
 
   if(y == "bias") {
 
-    n <- lmer(y ~ (1 | methods_used), data = data_used)
+    n <- lmer(y ~ (1 | methods_used), data = data)
     fit <- lmer(f, data = data)
 
   } else {
@@ -112,12 +112,12 @@ fit_glm_all <- function(df, y, vars, path){
 
     if(y == "nrmse") {
 
-      n <- lmer(y ~ (1 | methods_used) , data = data_used)
+      n <- lmer(y ~ (1 | methods_used) , data = data)
       fit <- lmer(f , data = data)
 
     } else if(y == "mpe") {
 
-      n <- lmer(y ~ (1 | methods_used) , data = data_used)
+      n <- lmer(y ~ (1 | methods_used) , data = data)
       fit <- lmer(f , data = data)
 
     }
