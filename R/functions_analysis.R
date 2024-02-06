@@ -1,38 +1,52 @@
 
-f_nmrmse <- formula(
+f_nrmse <- formula(
   y ~ (1 | methods_used) +
     property_area +
     total_take_density +
     delta +
+    # effort +                              # removed after 1st round
+    # unit_count +                          # removed after 1st round
     n_reps_pp +
-    effort +
-    I(property_area * total_take_density) +
-    I(property_area * delta) +
-    I(property_area * unit_count) +
-    I(property_area * n_reps_pp) +
-    I(total_take_density * delta) +
-    I(total_take_density * unit_count) +
-    I(total_take_density * n_reps_pp) +
-    I(total_take_density * effort) +
-    I(delta * n_reps_pp) +
-    I(delta * effort)
+    I_property_area_x_total_take_density +
+    # I_property_area_x_delta +             # removed after 1st round
+    I_property_area_x_unit_count +
+    I_property_area_x_n_reps_pp +
+    I_property_area_x_effort +
+    I_total_take_density_x_delta +
+    # I_total_take_density_x_unit_count +   # removed after 1st round
+    I_total_take_density_x_n_reps_pp +
+    I_total_take_density_x_effort +
+    # I_delta_x_unit_count +                # removed after 1st round
+    I_delta_x_n_reps_pp +
+    I_delta_x_effort
+    # I_unit_count_x_n_reps_pp +            # removed after 1st round
+    # I_unit_count_x_effort +               # removed after 1st round
+    # I_n_reps_pp_x_effort                  # removed after 1st round
 )
 
 f_mpe <- formula(
   y ~ (1 | methods_used) +
-    unit_count +
-    n_reps_pp +
+    property_area +
+    total_take_density +
+    # delta +                               # removed after 1st round
     effort +
-    I(property_area * total_take_density) +
-    I(property_area * unit_count) +
-    I(property_area * n_reps_pp) +
-    I(total_take_density * delta) +
-    I(total_take_density * unit_count) +
-    I(total_take_density * n_reps_pp) +
-    I(total_take_density * effort) +
-    I(delta * unit_count) +
-    I(delta * n_reps_pp) +
-    I(delta * effort)
+    # unit_count +                          # removed after 1st round
+    n_reps_pp +
+    I_property_area_x_total_take_density +
+    # I_property_area_x_delta +             # removed after 1st round
+    I_property_area_x_unit_count +
+    I_property_area_x_n_reps_pp +
+    # I_property_area_x_effort +            # removed after 1st round
+    I_total_take_density_x_delta +
+    # I_total_take_density_x_unit_count +   # removed after 1st round
+    I_total_take_density_x_n_reps_pp +
+    I_total_take_density_x_effort +
+    # I_delta_x_unit_count +                # removed after 1st round
+    I_delta_x_n_reps_pp +
+    I_delta_x_effort
+    # I_unit_count_x_n_reps_pp +            # removed after 1st round
+    # I_unit_count_x_effort +               # removed after 1st round
+    # I_n_reps_pp_x_effort                  # removed after 1st round
 )
 
 f_bias <- formula(
@@ -40,13 +54,24 @@ f_bias <- formula(
     property_area +
     total_take_density +
     delta +
-    n_reps_pp +
-    I(property_area * total_take_density) +
-    I(property_area * delta) +
-    I(property_area * n_reps_pp) +
-    I(total_take_density * unit_count) +
-    I(total_take_density * n_reps_pp) +
-    I(delta * effort)
+    # effort +                              # removed after 1st round
+    # unit_count +                          # removed after 1st round
+    # n_reps_pp +                           # removed after 1st round
+    I_property_area_x_total_take_density +
+    I_property_area_x_delta +
+    # I_property_area_x_unit_count +        # removed after 1st round
+    I_property_area_x_n_reps_pp +
+    # I_property_area_x_effort +            # removed after 1st round
+    I_total_take_density_x_delta +
+    I_total_take_density_x_unit_count +
+    I_total_take_density_x_n_reps_pp +
+    # I_total_take_density_x_effort +       # removed after 1st round
+    # I_delta_x_unit_count +                # removed after 1st round
+    # I_delta_x_n_reps_pp +                 # removed after 1st round
+    I_delta_x_effort
+    # I_unit_count_x_n_reps_pp +            # removed after 1st round
+    # I_unit_count_x_effort +               # removed after 1st round
+    # I_n_reps_pp_x_effort                  # removed after 1st round
 )
 
 f <- formula(
@@ -104,7 +129,7 @@ fit_glm_all <- function(df, y, vars, path){
   if(y == "bias") {
 
     n <- lmer(y ~ (1 | methods_used), data = data)
-    fit <- lmer(f, data = data)
+    fit <- lmer(f_bias, data = data)
 
   } else {
 
@@ -113,12 +138,12 @@ fit_glm_all <- function(df, y, vars, path){
     if(y == "nrmse") {
 
       n <- lmer(y ~ (1 | methods_used) , data = data)
-      fit <- lmer(f , data = data)
+      fit <- lmer(f_nrmse , data = data)
 
     } else if(y == "mpe") {
 
       n <- lmer(y ~ (1 | methods_used) , data = data)
-      fit <- lmer(f , data = data)
+      fit <- lmer(f_mpe , data = data)
 
     }
 

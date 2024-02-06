@@ -10,7 +10,7 @@ library(lme4)
 # path <- file.path(analysis_dir, model_dir)
 # density_dirs <- list.files(path)
 
-vars <- "all"
+vars <- "cut1"
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
 top_dir <- config$top_dir
