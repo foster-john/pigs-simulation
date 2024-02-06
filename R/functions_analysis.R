@@ -1,4 +1,57 @@
 
+f_nmrmse <- formula(
+  y ~ (1 | methods_used) +
+    property_area +
+    total_take_density +
+    delta +
+    unit_count +
+    n_reps_pp +
+    effort +
+    I(property_area * total_take_density) +
+    I(property_area * delta) +
+    I(property_area * unit_count) +
+    I(property_area * n_reps_pp) +
+    I(total_take_density * delta) +
+    I(total_take_density * unit_count) +
+    I(total_take_density * n_reps_pp) +
+    I(total_take_density * effort) +
+    I(delta * n_reps_pp) +
+    I(delta * effort)
+)
+
+f_mpe <- formula(
+  y ~ (1 | methods_used) +
+    property_area +
+    total_take_density +
+    unit_count +
+    n_reps_pp +
+    effort +
+    I(property_area * total_take_density) +
+    I(property_area * unit_count) +
+    I(property_area * n_reps_pp) +
+    I(total_take_density * delta) +
+    I(total_take_density * unit_count) +
+    I(total_take_density * n_reps_pp) +
+    I(total_take_density * effort) +
+    I(delta * unit_count) +
+    I(delta * n_reps_pp) +
+    I(delta * effort)
+)
+
+f_bias <- formula(
+  y ~ (1 | methods_used) +
+    property_area +
+    total_take_density +
+    delta +
+    n_reps_pp +
+    I(property_area * total_take_density) +
+    I(property_area * delta) +
+    I(property_area * n_reps_pp) +
+    I(total_take_density * delta) +
+    I(total_take_density * unit_count) +
+    I(total_take_density * n_reps_pp) +
+    I(delta * effort)
+)
 
 fit_glm_all <- function(df, y, effort, agg, path){
 
@@ -40,56 +93,31 @@ fit_glm_all <- function(df, y, effort, agg, path){
   #   cor() |>
   #   print()
 
-
-  f <- formula(
-    y ~ (1 | methods_used) +
-      # (0 + effort | methods_used) +
-      property_area +
-      total_take_density +
-      delta +
-      unit_count +
-      n_reps_pp +
-      effort +
-      I(property_area * total_take_density) +
-      I(property_area * delta) +
-      I(property_area * unit_count) +
-      I(property_area * n_reps_pp) +
-      I(property_area * effort) +
-      I(total_take_density * delta) +
-      I(total_take_density * unit_count) +
-      I(total_take_density * n_reps_pp) +
-      I(total_take_density * effort) +
-      I(delta * unit_count) +
-      I(delta * n_reps_pp) +
-      I(delta * effort) +
-      I(unit_count * n_reps_pp) +
-      I(unit_count * effort) +
-      I(n_reps_pp * effort)
-  )
-
   if(y == "bias") {
-    fit <- lmer(f, data = data)
-  } else {
-    fit <- glmer(f , family = Gamma(link = "log"), data = data)
+    fit <- lmer(f_bias, data = data)
+  } else if(y == "nrmse") {
+    fit <- glmer(f_nmrmse , family = Gamma(link = "log"), data = data)
+  } else if(y == "mpe") {
+    fit <- glmer(f_mpe , family = Gamma(link = "log"), data = data)
   }
 
   filename <- paste(y, effort, agg, sep = "-")
-  outname <- file.path(path, paste0(filename, ".rds"))
+  outname <- file.path(path, paste0(filename, "-cut1.rds"))
   write_rds(list(fit = fit, data = data), outname)
   message("  Inital fit done")
   message("  Fit warnings:")
   print(warnings())
 
-  message("Dredge")
-  oop <- options(na.action = "na.fail")
-  dd <- MuMIn::dredge(fit)
-
-  outname <- file.path(path, paste0(filename, "-dredge.rds"))
-  write_rds(dd, outname)
-
-  message("  Dredge done")
-  message("  Dredge warnings:")
-  print(warnings())
+  # message("Dredge")
+  # oop <- options(na.action = "na.fail")
+  # dd <- MuMIn::dredge(fit)
+  #
+  # outname <- file.path(path, paste0(filename, "-dredge.rds"))
+  # write_rds(dd, outname)
+  #
+  # message("  Dredge done")
+  # message("  Dredge warnings:")
+  # print(warnings())
 
   return(list(fit = fit, dredge = dd))
 }

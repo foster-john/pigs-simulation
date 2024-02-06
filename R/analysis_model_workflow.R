@@ -158,7 +158,7 @@ outlier <- data_final_join |>
 
 data <- data_final_join |>
   ungroup() |>
-  filter(density > 0,
+  filter(#density > 0,
          nm_rmse_abundance < outlier) |>
   select(property_id, PPNum, property_area, med_density,
          nm_rmse_density, mbias_density, mpe_density,
