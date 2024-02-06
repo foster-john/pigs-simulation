@@ -200,8 +200,6 @@ task_id <- as.numeric(args[1])
 
 source("R/functions_analysis.R")
 
-model_to_run <- models |> slice(task_id)
-
 y <- y[task_id]
 
 fit <- fit_glm_all(
