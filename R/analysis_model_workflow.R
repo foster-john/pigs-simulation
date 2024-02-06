@@ -10,6 +10,7 @@ library(lme4)
 # path <- file.path(analysis_dir, model_dir)
 # density_dirs <- list.files(path)
 
+vars <- "all"
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
 top_dir <- config$top_dir
@@ -160,35 +161,40 @@ data <- data_final_join |>
   ungroup() |>
   filter(density > 0,
          nm_rmse_abundance < outlier) |>
-  select(property_id, PPNum, property_area, med_density,
+  select(property_id, PPNum, property_area,
          nm_rmse_density, mbias_density, mpe_density,
          sum_take_density, delta, methods_used, mean_effort_per_unit,
-         sum_effort_per_unit, mean_effort, sum_effort, mean_unit_count,
-         sum_unit_count, n_reps_pp) |>
+         mean_unit_count, n_reps_pp) |>
   distinct() |>
-  mutate(property_area = rescale_variable(property_area),
-         med_density = rescale_variable(med_density),
-         total_take_density = rescale_variable(sum_take_density),
-         delta = rescale_variable(delta),
-         methods_used = as.factor(methods_used),
-         mean_effort_per_unit = rescale_variable(mean_effort_per_unit),
-         sum_effort_per_unit = rescale_variable(sum_effort_per_unit),
-         mean_effort_raw = rescale_variable(mean_effort),
-         sum_effort_raw = rescale_variable(sum_effort),
-         mean_unit_count = rescale_variable(mean_unit_count),
-         sum_unit_count = rescale_variable(sum_unit_count),
-         n_reps_pp = rescale_variable(n_reps_pp)) |>
-  select(-mean_effort, -sum_effort, -sum_take_density, -property_id, -PPNum)
+  mutate(
+    I_property_area_x_total_take_density = rescale_variable(property_area * sum_take_density),
+    I_property_area_x_delta = rescale_variable(property_area * delta),
+    I_property_area_x_unit_count = rescale_variable(property_area * mean_unit_count),
+    I_property_area_x_n_reps_pp = rescale_variable(property_area * n_reps_pp),
+    I_property_area_x_effort = rescale_variable(property_area * mean_effort_per_unit),
+    I_total_take_density_x_delta = rescale_variable(sum_take_density * delta),
+    I_total_take_density_x_unit_count = rescale_variable(sum_take_density * mean_unit_count),
+    I_total_take_density_x_n_reps_pp = rescale_variable(sum_take_density * n_reps_pp),
+    I_total_take_density_x_effort = rescale_variable(sum_take_density * mean_effort_per_unit),
+    I_delta_x_unit_count = rescale_variable(delta * mean_unit_count),
+    I_delta_x_n_reps_pp = rescale_variable(delta * n_reps_pp),
+    I_delta_x_effort = rescale_variable(delta * mean_effort_per_unit),
+    I_unit_count_x_n_reps_pp = rescale_variable(mean_unit_count * n_reps_pp),
+    I_unit_count_x_effort = rescale_variable(mean_unit_count * mean_effort_per_unit),
+    I_n_reps_pp_x_effort = rescale_variable(n_reps_pp * mean_effort_per_unit),
+    property_area = rescale_variable(property_area),
+    total_take_density = rescale_variable(sum_take_density),
+    delta = rescale_variable(delta),
+    methods_used = as.factor(methods_used),
+    effort = rescale_variable(mean_effort_per_unit),
+    unit_count = rescale_variable(mean_unit_count),
+    n_reps_pp = rescale_variable(n_reps_pp)) |>
+  select(-sum_take_density, -property_id, -PPNum, -mean_unit_count, -mean_effort_per_unit)
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "dredgeGLMs", model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-models <- expand_grid(
-  y = c("nrmse", "bias", "mpe"),
-  effort = "per_unit",
-  agg = "mean"
-)
-
+y <- c("nrmse", "bias", "mpe")
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
 
@@ -196,15 +202,12 @@ source("R/functions_analysis.R")
 
 model_to_run <- models |> slice(task_id)
 
-y <- pull(model_to_run, y)
-effort <- pull(model_to_run, effort)
-agg <- pull(model_to_run, agg)
+y <- y[task_id]
 
 fit <- fit_glm_all(
   df = data,
   y = y,
-  effort = effort,
-  agg = agg,
+  vars = vars,
   path = path
 )
 warnings()
