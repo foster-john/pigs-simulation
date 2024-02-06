@@ -4,7 +4,6 @@ f_nmrmse <- formula(
     property_area +
     total_take_density +
     delta +
-    unit_count +
     n_reps_pp +
     effort +
     I(property_area * total_take_density) +
@@ -21,8 +20,6 @@ f_nmrmse <- formula(
 
 f_mpe <- formula(
   y ~ (1 | methods_used) +
-    property_area +
-    total_take_density +
     unit_count +
     n_reps_pp +
     effort +
@@ -47,10 +44,34 @@ f_bias <- formula(
     I(property_area * total_take_density) +
     I(property_area * delta) +
     I(property_area * n_reps_pp) +
-    I(total_take_density * delta) +
     I(total_take_density * unit_count) +
     I(total_take_density * n_reps_pp) +
     I(delta * effort)
+)
+
+f <- formula(
+  y ~ (1 | methods_used) +
+    property_area +
+    total_take_density +
+    delta +
+    unit_count +
+    n_reps_pp +
+    effort +
+    I(property_area * total_take_density) +
+    I(property_area * delta) +
+    I(property_area * unit_count) +
+    I(property_area * n_reps_pp) +
+    I(property_area * effort) +
+    I(total_take_density * delta) +
+    I(total_take_density * unit_count) +
+    I(total_take_density * n_reps_pp) +
+    I(total_take_density * effort) +
+    I(delta * unit_count) +
+    I(delta * n_reps_pp) +
+    I(delta * effort) +
+    I(unit_count * n_reps_pp) +
+    I(unit_count * effort) +
+    I(n_reps_pp * effort)
 )
 
 fit_glm_all <- function(df, y, effort, agg, path){
@@ -83,6 +104,7 @@ fit_glm_all <- function(df, y, effort, agg, path){
   }
 
   data <- subset_rename(df, y, effort, agg)
+  data_l <- data |> mutate(y = log(y))
 
   message("y = ", y)
   message("effort = ", effort)
@@ -95,22 +117,34 @@ fit_glm_all <- function(df, y, effort, agg, path){
 
   if(y == "bias") {
     n <- lmer(y ~ (1 | methods_used), data = data)
-    fit <- lmer(f_bias, data = data)
+    fit <- lmer(f, data = data)
   } else if(y == "nrmse") {
-    n <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
-    fit <- glmer(f_nmrmse , family = Gamma(link = "log"), data = data)
+    # n_g <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
+    # fit_g <- glmer(f , family = Gamma(link = "log"), data = data)
+
+    n_l <- lmer(y ~ (1 | methods_used) , data = data_l)
+    fit_l <- lmer(f , data = data_l)
   } else if(y == "mpe") {
-    n <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
-    fit <- glmer(f_mpe , family = Gamma(link = "log"), data = data)
+    # n_g <- glmer(y ~ (1 | methods_used) , family = Gamma(link = "log"), data = data)
+    # fit_g <- glmer(f , family = Gamma(link = "log"), data = data)
+
+    n_l <- lmer(y ~ (1 | methods_used) , data = data_l)
+    fit_l <- lmer(f , data = data_l)
   }
 
   filename <- paste(y, effort, agg, sep = "-")
 
-  outname <- file.path(path, paste0(filename, "-null.rds"))
-  write_rds(list(fit = n, data = data), outname)
+  outname <- file.path(path, paste0(filename, "-log_null.rds"))
+  write_rds(list(fit = n, data = data_l), outname)
 
-  outname <- file.path(path, paste0(filename, "-cut1.rds"))
-  write_rds(list(fit = fit, data = data), outname)
+  outname <- file.path(path, paste0(filename, "-log.rds"))
+  write_rds(list(fit = fit, data = data_l), outname)
+
+  # outname <- file.path(path, paste0(filename, "null.rds"))
+  # write_rds(list(fit = n, data = data), outname)
+  #
+  # outname <- file.path(path, paste0(filename, ".rds"))
+  # write_rds(list(fit = fit, data = data), outname)
 
   message("  Inital fit done")
   message("  Fit warnings:")
