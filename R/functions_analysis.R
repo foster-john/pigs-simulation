@@ -75,7 +75,7 @@ f_bias <- formula(
 )
 
 f <- formula(
-  y ~ (1 | methods_used) +
+  y ~ methods_used +
     property_area +
     total_take_density +
     delta +
