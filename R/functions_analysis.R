@@ -135,10 +135,10 @@ fit_glm_all <- function(df, y, effort, agg, path){
   filename <- paste(y, effort, agg, sep = "-")
 
   outname <- file.path(path, paste0(filename, "-log_null.rds"))
-  write_rds(list(fit = n, data = data_l), outname)
+  write_rds(list(fit = n_l, data = data_l), outname)
 
   outname <- file.path(path, paste0(filename, "-log.rds"))
-  write_rds(list(fit = fit, data = data_l), outname)
+  write_rds(list(fit = fit_l, data = data_l), outname)
 
   # outname <- file.path(path, paste0(filename, "null.rds"))
   # write_rds(list(fit = n, data = data), outname)
