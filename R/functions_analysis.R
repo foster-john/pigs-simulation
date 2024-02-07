@@ -130,7 +130,7 @@ fit_glm_all <- function(df, y, vars, path){
   }
 
   n <- glm(y ~ methods_used, data = data)
-  fit <- glm(f_bias, data = data)
+  fit <- glm(f, data = data)
 
   filename <- paste(y, vars, sep = "-")
 
