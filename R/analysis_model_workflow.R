@@ -10,7 +10,7 @@ library(lme4)
 # path <- file.path(analysis_dir, model_dir)
 # density_dirs <- list.files(path)
 
-vars <- "step"
+vars <- "allSingle"
 config_name <- "hpc_production"
 config <- config::get(config = config_name)
 top_dir <- config$top_dir
@@ -191,7 +191,7 @@ data <- data_final_join |>
     n_reps_pp = rescale_variable(n_reps_pp)) |>
   select(-sum_take_density, -property_id, -PPNum, -mean_unit_count, -mean_effort_per_unit)
 
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "dredgeGLMs", model_dir)
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "GAMs", model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 y <- c("nrmse", "bias", "mpe")

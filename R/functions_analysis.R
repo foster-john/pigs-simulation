@@ -99,10 +99,36 @@ f <- formula(
     I_n_reps_pp_x_effort
 )
 
+f_gam <- formula(
+  y ~ s(methods_used, bs = "re") +
+    s(property_area) +
+    s(total_take_density) +
+    s(delta) +
+    s(effort) +
+    s(unit_count) +
+    s(n_reps_pp)
+    # s(I_property_area_x_total_take_density) +
+    # s(I_property_area_x_delta) +
+    # s(I_property_area_x_unit_count) +
+    # s(I_property_area_x_n_reps_pp) +
+    # s(I_property_area_x_effort) +
+    # s(I_total_take_density_x_delta) +
+    # s(I_total_take_density_x_unit_count) +
+    # s(I_total_take_density_x_n_reps_pp) +
+    # s(I_total_take_density_x_effort) +
+    # s(I_delta_x_unit_count) +
+    # s(I_delta_x_n_reps_pp) +
+    # s(I_delta_x_effort) +
+    # s(I_unit_count_x_n_reps_pp) +
+    # s(I_unit_count_x_effort) +
+    # s(I_n_reps_pp_x_effort)
+)
+
 fit_glm_all <- function(df, y, vars, path){
 
   require(lme4)
   require(dplyr)
+  require(mgcv)
 
   subset_rename <- function(df, y){
     if(y == "nrmse"){
@@ -129,8 +155,8 @@ fit_glm_all <- function(df, y, vars, path){
     data <- data |> mutate(y = log(y))
   }
 
-  n <- glm(y ~ methods_used, data = data)
-  fit <- glm(f, data = data)
+  n <- gam(y ~ s(methods_used, bs = "re"), data = data)
+  fit <- gam(f_gam, data = data)
 
   filename <- paste(y, vars, sep = "-")
 
