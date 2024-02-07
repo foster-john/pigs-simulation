@@ -170,11 +170,11 @@ fit_glm_all <- function(df, y, vars, path){
   message("  Fit warnings:")
   print(warnings())
 
-  message(" Step backward")
-  step_back <- step(fit, direction = "backward")
-
-  outname <- file.path(path, paste0(filename, "-stepback.rds"))
-  write_rds(step_back, outname)
+  # message(" Step backward")
+  # step_back <- step(fit, direction = "backward")
+  #
+  # outname <- file.path(path, paste0(filename, "-stepback.rds"))
+  # write_rds(step_back, outname)
 
   # message("Dredge")
   # oop <- options(na.action = "na.fail")
