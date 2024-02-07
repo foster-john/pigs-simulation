@@ -205,13 +205,19 @@ fit_glm_all <- function(df, y, vars, path){
     data <- data |> mutate(y = log(y))
   }
 
-  n <- gam(y ~ s(methods_used, bs = "re"), data = data)
-  fit <- gam(f_gam, data = data)
+  # n <- gam(y ~ s(methods_used, bs = "re"), data = data)
+  if(y == "bias"){
+    fit <- gam(f_gam_bias, data = data)
+  } else if(y == "mpe"){
+    fit <- gam(f_gam_mpe, data = data)
+  } else if(y == "nrmse"){
+    fit <- gam(f_gam_nrmse, data = data)
+  }
 
   filename <- paste(y, vars, sep = "-")
 
-  outname <- file.path(path, paste0(filename, "-null.rds"))
-  write_rds(list(fit = n, data = data), outname)
+  # outname <- file.path(path, paste0(filename, "-null.rds"))
+  # write_rds(list(fit = n, data = data), outname)
 
   outname <- file.path(path, paste0(filename, ".rds"))
   write_rds(list(fit = fit, data = data), outname)
