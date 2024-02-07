@@ -124,6 +124,56 @@ f_gam <- formula(
     s(I_n_reps_pp_x_effort)
 )
 
+f_gam_bias <- formula(
+  y ~ s(methods_used, bs = "re") +
+    s(property_area) +
+    s(total_take_density) +
+    s(delta) +
+    s(effort) +
+    s(I_property_area_x_total_take_density) +
+    s(I_total_take_density_x_delta) +
+    s(I_total_take_density_x_unit_count) +
+    s(I_total_take_density_x_n_reps_pp) +
+    s(I_total_take_density_x_effort)
+)
+
+f_gam_mpe <- formula(
+  y ~ s(methods_used, bs = "re") +
+    s(property_area) +
+    s(total_take_density) +
+    s(delta) +
+    s(effort) +
+    s(unit_count) +
+    s(n_reps_pp) +
+    s(I_property_area_x_total_take_density) +
+    s(I_property_area_x_delta) +
+    s(I_property_area_x_unit_count) +
+    s(I_property_area_x_n_reps_pp) +
+    s(I_total_take_density_x_delta) +
+    s(I_total_take_density_x_n_reps_pp) +
+    s(I_total_take_density_x_effort) +
+    s(I_delta_x_effort)
+)
+
+f_gam_nrmse <- formula(
+  y ~ s(methods_used, bs = "re") +
+    s(property_area) +
+    s(total_take_density) +
+    s(delta) +
+    s(effort) +
+    s(unit_count) +
+    s(n_reps_pp) +
+    s(I_property_area_x_total_take_density) +
+    s(I_property_area_x_delta) +
+    s(I_property_area_x_unit_count) +
+    s(I_property_area_x_n_reps_pp) +
+    s(I_total_take_density_x_delta) +
+    s(I_total_take_density_x_unit_count) +
+    s(I_total_take_density_x_n_reps_pp) +
+    s(I_total_take_density_x_effort) +
+    s(I_delta_x_effort)
+)
+
 fit_glm_all <- function(df, y, vars, path){
 
   require(lme4)
