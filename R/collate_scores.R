@@ -129,4 +129,4 @@ data_final_join <- left_join(density_obs, take_effort_summary)
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-write_rds(data_final_join, "abundanceScoresByPrimaryPeriod.rds")
+write_rds(data_final_join, file.path(path, "abundanceScoresByPrimaryPeriod.rds"))
