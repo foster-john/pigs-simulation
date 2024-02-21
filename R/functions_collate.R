@@ -301,8 +301,8 @@ take_calc <- function(df){
     summarise(mae = mean(abs(value - take)),
               mpe = mean(abs((value+1) - (take+1))/(take+1))*100,
               mbias = mean(value - take),
-              mse = mean((value - take)^2),
-              rmse = sqrt(mse),
+              rmse =  sqrt(mean((value - take)^2)),
+              rmsle =  sqrt(mean((log(value + 1) - log(take + 1))^2)),
               nm_rmse = rmse / mean(take),
               sd_ratio = sd(value) / sd(take))
 }
