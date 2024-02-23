@@ -1,248 +1,171 @@
 
-f_nrmse <- formula(
-  y ~ (1 | methods_used) +
-    property_area +
-    total_take_density +
-    delta +
-    # effort +                              # removed after 1st round
-    # unit_count +                          # removed after 1st round
-    n_reps_pp +
-    I_property_area_x_total_take_density +
-    # I_property_area_x_delta +             # removed after 1st round
-    I_property_area_x_unit_count +
-    I_property_area_x_n_reps_pp +
-    # I_property_area_x_effort +            # removed after 2nd round
-    I_total_take_density_x_delta +
-    # I_total_take_density_x_unit_count +   # removed after 1st round
-    I_total_take_density_x_n_reps_pp +
-    I_total_take_density_x_effort +
-    # I_delta_x_unit_count +                # removed after 1st round
-    I_delta_x_n_reps_pp +
-    I_delta_x_effort
-    # I_unit_count_x_n_reps_pp +            # removed after 1st round
-    # I_unit_count_x_effort +               # removed after 1st round
-    # I_n_reps_pp_x_effort                  # removed after 1st round
-)
 
-f_mpe <- formula(
-  y ~ (1 | methods_used) +
-    property_area +
-    total_take_density +
-    # delta +                               # removed after 1st round
-    effort +
-    # unit_count +                          # removed after 1st round
-    n_reps_pp +
-    I_property_area_x_total_take_density +
-    # I_property_area_x_delta +             # removed after 1st round
-    I_property_area_x_unit_count +
-    I_property_area_x_n_reps_pp +
-    # I_property_area_x_effort +            # removed after 1st round
-    I_total_take_density_x_delta +
-    # I_total_take_density_x_unit_count +   # removed after 1st round
-    I_total_take_density_x_n_reps_pp +
-    I_total_take_density_x_effort +
-    # I_delta_x_unit_count +                # removed after 1st round
-    I_delta_x_n_reps_pp +
-    I_delta_x_effort
-    # I_unit_count_x_n_reps_pp +            # removed after 1st round
-    # I_unit_count_x_effort +               # removed after 1st round
-    # I_n_reps_pp_x_effort                  # removed after 1st round
-)
+ranger_fit <- function(df){
 
-f_bias <- formula(
-  y ~ (1 | methods_used) +
-    property_area +
-    total_take_density +
-    delta +
-    # effort +                              # removed after 1st round
-    # unit_count +                          # removed after 1st round
-    # n_reps_pp +                           # removed after 1st round
-    I_property_area_x_total_take_density +
-    I_property_area_x_delta +
-    # I_property_area_x_unit_count +        # removed after 1st round
-    I_property_area_x_n_reps_pp +
-    # I_property_area_x_effort +            # removed after 1st round
-    I_total_take_density_x_delta +
-    I_total_take_density_x_unit_count +
-    I_total_take_density_x_n_reps_pp +
-    # I_total_take_density_x_effort +       # removed after 1st round
-    # I_delta_x_unit_count +                # removed after 1st round
-    # I_delta_x_n_reps_pp +                 # removed after 1st round
-    I_delta_x_effort
-    # I_unit_count_x_n_reps_pp +            # removed after 1st round
-    # I_unit_count_x_effort +               # removed after 1st round
-    # I_n_reps_pp_x_effort                  # removed after 1st round
-)
+  require(ranger)
 
-f <- formula(
-  y ~ methods_used +
-    property_area +
-    total_take_density +
-    delta +
-    effort +
-    unit_count +
-    n_reps_pp +
-    I_property_area_x_total_take_density +
-    I_property_area_x_delta +
-    I_property_area_x_unit_count +
-    I_property_area_x_n_reps_pp +
-    I_property_area_x_effort +
-    I_total_take_density_x_delta +
-    I_total_take_density_x_unit_count +
-    I_total_take_density_x_n_reps_pp +
-    I_total_take_density_x_effort +
-    I_delta_x_unit_count +
-    I_delta_x_n_reps_pp +
-    I_delta_x_effort +
-    I_unit_count_x_n_reps_pp +
-    I_unit_count_x_effort +
-    I_n_reps_pp_x_effort
-)
+  # number of features
+  n_features <- length(setdiff(names(df), "y"))
 
-f_gam <- formula(
-  y ~ s(methods_used, bs = "re") +
-    s(property_area) +
-    s(total_take_density) +
-    s(delta) +
-    s(effort) +
-    s(unit_count) +
-    s(n_reps_pp) +
-    s(I_property_area_x_total_take_density) +
-    s(I_property_area_x_delta) +
-    s(I_property_area_x_unit_count) +
-    s(I_property_area_x_n_reps_pp) +
-    s(I_property_area_x_effort) +
-    s(I_total_take_density_x_delta) +
-    s(I_total_take_density_x_unit_count) +
-    s(I_total_take_density_x_n_reps_pp) +
-    s(I_total_take_density_x_effort) +
-    s(I_delta_x_unit_count) +
-    s(I_delta_x_n_reps_pp) +
-    s(I_delta_x_effort) +
-    s(I_unit_count_x_n_reps_pp) +
-    s(I_unit_count_x_effort) +
-    s(I_n_reps_pp_x_effort)
-)
+  # create hyperparameter grid
+  hyper_grid <- expand.grid(
+    mtry = floor(n_features * c(.15, .25, .333, .4)),
+    min.node.size = c(1, 3, 5, 10),
+    replace = c(TRUE, FALSE),
+    sample.fraction = c(.5, .63, .8),
+    rmse = NA
+  )
 
-f_gam_bias <- formula(
-  y ~ s(methods_used, bs = "re") +
-    s(property_area) +
-    s(total_take_density) +
-    s(delta) +
-    s(effort) +
-    s(I_property_area_x_total_take_density) +
-    s(I_total_take_density_x_delta) +
-    s(I_total_take_density_x_unit_count) +
-    s(I_total_take_density_x_n_reps_pp) +
-    s(I_total_take_density_x_effort)
-)
+  train(
+    y ~ .,
+    data = df,
+    method = "ranger",
+    trControl = trainControl(method = "cv"),
+    tuneGrid = hyper_grid,
+    metric = "RMSE"
+  )
 
-f_gam_mpe <- formula(
-  y ~ s(methods_used, bs = "re") +
-    s(property_area) +
-    s(total_take_density) +
-    s(delta) +
-    s(effort) +
-    s(unit_count) +
-    s(n_reps_pp) +
-    s(I_property_area_x_total_take_density) +
-    s(I_property_area_x_delta) +
-    s(I_property_area_x_unit_count) +
-    s(I_property_area_x_n_reps_pp) +
-    s(I_total_take_density_x_delta) +
-    s(I_total_take_density_x_n_reps_pp) +
-    s(I_total_take_density_x_effort) +
-    s(I_delta_x_effort)
-)
+}
 
-f_gam_nrmse <- formula(
-  y ~ s(methods_used, bs = "re") +
-    s(property_area) +
-    s(total_take_density) +
-    s(delta) +
-    s(effort) +
-    s(unit_count) +
-    s(n_reps_pp) +
-    s(I_property_area_x_total_take_density) +
-    s(I_property_area_x_delta) +
-    s(I_property_area_x_unit_count) +
-    s(I_property_area_x_n_reps_pp) +
-    s(I_total_take_density_x_delta) +
-    s(I_total_take_density_x_unit_count) +
-    s(I_total_take_density_x_n_reps_pp) +
-    s(I_total_take_density_x_effort) +
-    s(I_delta_x_effort)
-)
+knn_fit <- function(df){
 
-fit_glm_all <- function(df, y, vars, path){
+  require(caret)
 
-  require(lme4)
+  # Create a resampling method
+  cv <- trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 5
+  )
+
+  # Create a hyperparameter grid search
+  hyper_grid <- expand.grid(
+    k = floor(seq(1, nrow(df)/3, length.out = 20))
+  )
+
+  # Fit knn model and perform grid search
+  train(
+    y ~ .,
+    data = df,
+    method = "knn",
+    trControl = trainControl(method = "cv"),
+    tuneGrid = hyper_grid,
+    metric = "RMSE"
+  )
+}
+
+my_recipe <- function(df){
+  require(rsample)
+  require(recipes)
+
+  split <- initial_split(df, prop = 0.6,
+                         strata = "methods_used")
+
+  df_train <- training(split)
+  df_test <- testing(split)
+
+  blueprint <- recipe(y ~ ., data = df_train) |>
+    step_dummy(all_nominal_predictors()) |>
+    step_interact(terms = ~ starts_with("methods_used"):all_numeric_predictors()) |>
+    step_interact(terms = ~ property_area:take) |>
+    step_interact(terms = ~ property_area:delta) |>
+    step_interact(terms = ~ property_area:mean_effort) |>
+    step_interact(terms = ~ property_area:sum_effort) |>
+    step_interact(terms = ~ property_area:mean_unit_count) |>
+    step_interact(terms = ~ property_area:sum_unit_count) |>
+    step_interact(terms = ~ property_area:n_reps_pp) |>
+    step_interact(terms = ~ take:delta) |>
+    step_interact(terms = ~ take:mean_effort) |>
+    step_interact(terms = ~ take:sum_effort) |>
+    step_interact(terms = ~ take:mean_unit_count) |>
+    step_interact(terms = ~ take:sum_unit_count) |>
+    step_interact(terms = ~ take:n_reps_pp) |>
+    step_interact(terms = ~ delta:mean_effort) |>
+    step_interact(terms = ~ delta:sum_effort) |>
+    step_interact(terms = ~ delta:mean_unit_count) |>
+    step_interact(terms = ~ delta:sum_unit_count) |>
+    step_interact(terms = ~ delta:n_reps_pp) |>
+    step_interact(terms = ~ n_reps_pp:mean_effort) |>
+    step_interact(terms = ~ n_reps_pp:sum_effort) |>
+    step_interact(terms = ~ n_reps_pp:mean_unit_count) |>
+    step_interact(terms = ~ n_reps_pp:sum_unit_count) |>
+    step_interact(terms = ~ mean_effort:mean_unit_count) |>
+    step_interact(terms = ~ mean_effort:sum_unit_count) |>
+    step_interact(terms = ~ sum_effort:mean_unit_count) |>
+    step_interact(terms = ~ sum_effort:sum_unit_count) |>
+    step_nzv(all_predictors()) |>
+    step_center(all_numeric_predictors()) |>
+    step_scale(all_numeric_predictors())
+
+  prepare <- prep(blueprint, training = df_train)
+
+  baked_train <- bake(prepare, new_data = df_train)
+  baked_test <- bake(prepare, new_data = df_test)
+
+  return(list(df_train = baked_train, df_test = baked_test))
+
+}
+
+fit_ml <- function(df, ml, dest){
+
   require(dplyr)
-  require(mgcv)
+  require(doParallel)
 
-  subset_rename <- function(df, y){
-    if(y == "nrmse"){
-      df <- df |>
-        rename(y = nm_rmse_density) |>
-        select(-mbias_density, -mpe_density)
-    } else if (y == "bias"){
-      df <- df |>
-        rename(y = mbias_density) |>
-        select(-nm_rmse_density, -mpe_density)
-    } else if(y == "mpe"){
-      df <- df |>
-        rename(y = mpe_density) |>
-        select(-mbias_density, -nm_rmse_density)
-    }
+  df_ls <- my_recipe(df)
+  df_train <- df_ls$df_train
+  df_test <- df_ls$df_test
+
+  message("ml = ", ml)
+
+  cl <- makePSOCKcluster(5)
+  registerDoParallel(cl)
+
+  if(ml == "ranger"){
+
+    message("Fitting random forest...")
+    fit <- ranger_fit(df_train)
+
+  } else if(ml == "knn"){
+
+    message("Fitting k-nearest neighbors")
+    fit <- knn_fit(df_train)
 
   }
 
-  data <- subset_rename(df, y)
+  stopCluster(cl)
 
-  message("y = ", y)
-
-  if(y != "bias"){
-    data <- data |> mutate(y = log(y))
-  }
-
-  # n <- gam(y ~ s(methods_used, bs = "re"), data = data)
-  if(y == "bias"){
-    fit <- gam(f_gam_bias, data = data)
-  } else if(y == "mpe"){
-    fit <- gam(f_gam_mpe, data = data)
-  } else if(y == "nrmse"){
-    fit <- gam(f_gam_nrmse, data = data)
-  }
-
-  filename <- paste(y, vars, sep = "-")
-
-  # outname <- file.path(path, paste0(filename, "-null.rds"))
-  # write_rds(list(fit = n, data = data), outname)
-
-  outname <- file.path(path, paste0(filename, ".rds"))
-  write_rds(list(fit = fit, data = data), outname)
-
-  message("  Inital fit done")
+  message(paste0("   ", ml, " fit done"))
   message("  Fit warnings:")
   print(warnings())
 
-  # message(" Step backward")
-  # step_back <- step(fit, direction = "backward")
-  #
-  # outname <- file.path(path, paste0(filename, "-stepback.rds"))
-  # write_rds(step_back, outname)
+  message("==== Fit ====")
+  fit
 
-  # message("Dredge")
-  # oop <- options(na.action = "na.fail")
-  # dd <- MuMIn::dredge(fit)
-  #
-  # outname <- file.path(path, paste0(filename, "-dredge.rds"))
-  # write_rds(dd, outname)
-  #
-  # message("  Dredge done")
-  # message("  Dredge warnings:")
-  # print(warnings())
+  write_rds(
+    list(
+      fit = fit,
+      data_train = df_train,
+      data_test = df_test
+    ),
+    dest)
 
-  return(list(fit = fit, dredge = dd))
 }
 
+subset_rename <- function(df, y, outlier_quant = 0.995){
+
+  require(dplyr)
+
+  outlier <- df |>
+    pull(all_of(y)) |>
+    quantile(outlier_quant)
+
+  df |>
+    ungroup() |>
+    rename(y = .data[[y]],
+           take = sum_take_density) |>
+    filter(density > 0,
+           y < outlier) |>
+    select(-contains("density"), -contains("abundance"), -PPNum, -property, -property_id,
+           -extinct, -recovered, -obs_flag, -sum_take, -contains("per_unit"))
+
+}
