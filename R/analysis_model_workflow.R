@@ -7,11 +7,14 @@ library(rsample)
 library(caret)
 library(ranger)
 
+source("R/functions_analysis.R")
+
 analysis_dir <- "analysis"
 model_dir <- "betaSurvival_uniqueAreaTrapSnare"
 path <- file.path(analysis_dir, model_dir)
 
 config_name <- "hpc_production"
+config <- config::get(config = config_name)
 top_dir <- config$top_dir
 analysis_dir <- config$analysis_dir
 dev_dir <- config$dev_dir
@@ -29,17 +32,19 @@ tasks <- expand_grid(
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
+if(is.na(task_id)) task_id <- 6
 
 y <- tasks |> slice(task_id) |> pull(y)
 ml <- tasks |> slice(task_id) |> pull(ml)
 
 df <- subset_rename(data, y)
 
-samps <- sample.int(nrow(df), 1000, replace = TRUE)
-df <- df |> slice(samps)
-glimpse(df)
+samps <- sample.int(nrow(df), 5000, replace = FALSE)
+df_model <- df |> slice(samps)
+glimpse(df_model)
 
-filename <- paste0(y, "_", ml, ".rds")
-fit_ml(df, ml, filename)
+filename <- file.path(path, paste0(y, "_", ml, ".rds"))
+fit_ml(df_model, ml, filename)
 
 message("=== DONE ===")
+

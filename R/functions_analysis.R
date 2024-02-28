@@ -3,17 +3,19 @@
 ranger_fit <- function(df){
 
   require(ranger)
+  require(caret)
 
   # number of features
   n_features <- length(setdiff(names(df), "y"))
 
   # create hyperparameter grid
   hyper_grid <- expand.grid(
+    splitrule = "variance",
     mtry = floor(n_features * c(.15, .25, .333, .4)),
-    min.node.size = c(1, 3, 5, 10),
-    replace = c(TRUE, FALSE),
-    sample.fraction = c(.5, .63, .8),
-    rmse = NA
+    min.node.size = c(1, 3, 5, 10, 15)
+    # replace = c(TRUE, FALSE),
+    # sample.fraction = c(.5, .63, .8),
+    # rmse = NA
   )
 
   train(
@@ -22,7 +24,8 @@ ranger_fit <- function(df){
     method = "ranger",
     trControl = trainControl(method = "cv"),
     tuneGrid = hyper_grid,
-    metric = "RMSE"
+    metric = "RMSE",
+    importance = "impurity"
   )
 
 }
@@ -30,13 +33,6 @@ ranger_fit <- function(df){
 knn_fit <- function(df){
 
   require(caret)
-
-  # Create a resampling method
-  cv <- trainControl(
-    method = "repeatedcv",
-    number = 10,
-    repeats = 5
-  )
 
   # Create a hyperparameter grid search
   hyper_grid <- expand.grid(
@@ -115,8 +111,7 @@ fit_ml <- function(df, ml, dest){
   df_train <- df_ls$df_train
   df_test <- df_ls$df_test
 
-  message("ml = ", ml)
-
+  message("Make cluster")
   cl <- makePSOCKcluster(5)
   registerDoParallel(cl)
 
@@ -132,6 +127,7 @@ fit_ml <- function(df, ml, dest){
 
   }
 
+  pred <- predict(fit, df_test)
   stopCluster(cl)
 
   message(paste0("   ", ml, " fit done"))
@@ -139,7 +135,11 @@ fit_ml <- function(df, ml, dest){
   print(warnings())
 
   message("==== Fit ====")
-  fit
+  print(fit)
+
+  message("==== Prediction ====")
+  print(postResample(pred, df_test$y))
+
 
   write_rds(
     list(
@@ -159,13 +159,19 @@ subset_rename <- function(df, y, outlier_quant = 0.995){
     pull(all_of(y)) |>
     quantile(outlier_quant)
 
-  df |>
+  dat <- df |>
     ungroup() |>
-    rename(y = .data[[y]],
+    rename(y = all_of(y),
            take = sum_take_density) |>
-    filter(density > 0,
-           y < outlier) |>
+    # filter(density > 0,
+    #        y < outlier) |>
     select(-contains("density"), -contains("abundance"), -PPNum, -property, -property_id,
            -extinct, -recovered, -obs_flag, -sum_take, -contains("per_unit"))
+
+  if(y != "mbias_density"){
+    dat <- dat |> mutate(y = log(y))
+  }
+
+  return(dat)
 
 }
