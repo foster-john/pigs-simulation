@@ -24,6 +24,7 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   filter(density > 0)
+glimpse(data)
 
 tasks <- expand_grid(
  y = c("rmsle_density", "nm_rmse_density", "mpe_density", "mbias_density"),
