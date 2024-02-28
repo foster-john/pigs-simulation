@@ -33,19 +33,22 @@ tasks <- expand_grid(
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-#if(is.na(task_id)) task_id <- 6
-message("task id: ", task_id)
 
+if(is.na(task_id)){
+  task_id <- 6
+  samps <- sample.int(nrow(data), 5000, replace = FALSE)
+  data <- data |> slice(samps)
+}
+
+message("task id: ", task_id)
 y <- tasks |> slice(task_id) |> pull(y)
 ml <- tasks |> slice(task_id) |> pull(ml)
 
 message("\ny: ", y)
 message("ML: ", ml)
 
-df <- subset_rename(data, y)
+df_model <- subset_rename(data, y)
 
-samps <- sample.int(nrow(df), 5000, replace = FALSE)
-df_model <- df |> slice(samps)
 glimpse(df_model)
 
 start_time <- Sys.time()
