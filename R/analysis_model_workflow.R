@@ -32,7 +32,7 @@ tasks <- expand_grid(
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 6
+#if(is.na(task_id)) task_id <- 6
 
 y <- tasks |> slice(task_id) |> pull(y)
 ml <- tasks |> slice(task_id) |> pull(ml)
