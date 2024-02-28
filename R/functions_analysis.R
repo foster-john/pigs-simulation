@@ -34,6 +34,15 @@ knn_fit <- function(df){
 
   require(caret)
 
+  cv <- trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 5,
+    classProbs = TRUE,
+    summaryFunction = twoClassSummary
+  )
+
+
   # Create a hyperparameter grid search
   hyper_grid <- expand.grid(
     k = floor(seq(1, nrow(df)/3, length.out = 20))
@@ -44,7 +53,7 @@ knn_fit <- function(df){
     y ~ .,
     data = df,
     method = "knn",
-    trControl = trainControl(method = "cv"),
+    trControl = cv,
     tuneGrid = hyper_grid,
     metric = "RMSE"
   )
