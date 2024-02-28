@@ -23,12 +23,13 @@ project_dir <- config$project_dir
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
-  filter(density > 0)
+  filter(density > 0) |>
+  ungroup()
 #glimpse(data)
 
 tasks <- expand_grid(
  y = c("rmsle_density", "nm_rmse_density", "mpe_density", "mbias_density"),
- ml = c("ranger", "knn")
+ ml = c("ranger", "xgb")
 )
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -48,7 +49,6 @@ message("\ny: ", y)
 message("ML: ", ml)
 
 df_model <- subset_rename(data, y)
-
 glimpse(df_model)
 
 start_time <- Sys.time()

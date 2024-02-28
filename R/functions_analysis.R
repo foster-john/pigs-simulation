@@ -37,9 +37,7 @@ knn_fit <- function(df){
   cv <- trainControl(
     method = "repeatedcv",
     number = 10,
-    repeats = 5,
-    classProbs = TRUE,
-    summaryFunction = twoClassSummary
+    repeats = 5
   )
 
 
@@ -49,21 +47,41 @@ knn_fit <- function(df){
   )
 
   # Fit knn model and perform grid search
-  knnreg(
-    formula = y ~ .,
+  train(
+    y ~ .,
     data = df,
-    k =  floor(nrow(df)/3)
+    method = "knn",
+    trControl = cv,
+    tuneGrid = hyper_grid,
+    metric = "RMSE"
+  )
+}
+
+xgb_fit <- function(df){
+  cv <- trainControl(
+    method = "repeatedcv",
+    number = 10,
+    repeats = 5
   )
 
-  # train(
-  #   y ~ .,
-  #   data = df,
-  #   method = "knn",
-  #   trControl = cv,
-  #   tuneGrid = hyper_grid,
-  #   metric = "RMSE"
-  # )
+  # Create a hyperparameter grid search
+  hyper_grid <- expand.grid(
+    nrounds = c(100, 500, 1000, 1500),
+    eta = c(0.01, 0.05),
+    lambda = c(0, 1e-2, 0.1, 1, 100),
+    alpha = c(0, 1e-2, 0.1, 1, 100)
+  )
+
+  train(
+    y ~ .,
+    data = df,
+    method = "xgbLinear",
+    trControl = trainControl(method = "cv"),
+    tuneGrid = hyper_grid,
+    metric = "RMSE"
+  )
 }
+
 
 my_recipe <- function(df){
   require(rsample)
@@ -135,10 +153,10 @@ fit_ml <- function(df, ml, dest){
     message("Fitting random forest...")
     fit <- ranger_fit(df_train)
 
-  } else if(ml == "knn"){
+  } else if(ml == "xgb"){
 
-    message("Fitting k-nearest neighbors")
-    fit <- knn_fit(df_train)
+    message("Fitting extreme gradient boosting")
+    fit <- xgb_fit(df_train)
 
   }
 
