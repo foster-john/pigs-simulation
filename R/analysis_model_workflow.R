@@ -24,7 +24,7 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   filter(density > 0)
-glimpse(data)
+#glimpse(data)
 
 tasks <- expand_grid(
  y = c("rmsle_density", "nm_rmse_density", "mpe_density", "mbias_density"),
@@ -34,6 +34,7 @@ tasks <- expand_grid(
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
 #if(is.na(task_id)) task_id <- 6
+message("task id: ", task_id)
 
 y <- tasks |> slice(task_id) |> pull(y)
 ml <- tasks |> slice(task_id) |> pull(ml)
@@ -41,7 +42,7 @@ ml <- tasks |> slice(task_id) |> pull(ml)
 df <- subset_rename(data, y)
 
 samps <- sample.int(nrow(df), 5000, replace = FALSE)
-df_model <- df |> slice(samps)
+df_model <- df # |> slice(samps)
 glimpse(df_model)
 
 filename <- file.path(path, paste0(y, "_", ml, ".rds"))
