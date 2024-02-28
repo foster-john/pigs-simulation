@@ -39,14 +39,22 @@ message("task id: ", task_id)
 y <- tasks |> slice(task_id) |> pull(y)
 ml <- tasks |> slice(task_id) |> pull(ml)
 
+message("\ny: ", y)
+message("ML: ", ml)
+
 df <- subset_rename(data, y)
 
 samps <- sample.int(nrow(df), 5000, replace = FALSE)
 df_model <- df |> slice(samps)
 glimpse(df_model)
 
+start_time <- Sys.time()
+
 filename <- file.path(path, paste0(y, "_", ml, ".rds"))
 fit_ml(df_model, ml, filename)
 
+total_time <- Sys.time() - start_time
+message("Elapsed time: ")
+print(total_time)
 message("=== DONE ===")
 
