@@ -42,7 +42,7 @@ ml <- tasks |> slice(task_id) |> pull(ml)
 df <- subset_rename(data, y)
 
 samps <- sample.int(nrow(df), 5000, replace = FALSE)
-df_model <- df # |> slice(samps)
+df_model <- df |> slice(samps)
 glimpse(df_model)
 
 filename <- file.path(path, paste0(y, "_", ml, ".rds"))

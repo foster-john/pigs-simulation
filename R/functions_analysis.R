@@ -49,14 +49,20 @@ knn_fit <- function(df){
   )
 
   # Fit knn model and perform grid search
-  train(
-    y ~ .,
+  knnreg(
+    formula = y ~ .,
     data = df,
-    method = "knn",
-    trControl = cv,
-    tuneGrid = hyper_grid,
-    metric = "RMSE"
+    k =  floor(nrow(df)/3)
   )
+
+  # train(
+  #   y ~ .,
+  #   data = df,
+  #   method = "knn",
+  #   trControl = cv,
+  #   tuneGrid = hyper_grid,
+  #   metric = "RMSE"
+  # )
 }
 
 my_recipe <- function(df){
@@ -153,6 +159,7 @@ fit_ml <- function(df, ml, dest){
   write_rds(
     list(
       fit = fit,
+      pred = pred,
       data_train = df_train,
       data_test = df_test
     ),
