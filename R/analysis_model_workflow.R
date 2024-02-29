@@ -37,9 +37,24 @@ hyper_grid <- expand_grid(
   responses = c("nm_rmse_density", "mpe_density", "mbias_density"),
   nrounds = c(50, 100, 500, 1000, 2000),
   eta = c(0.05, 0.1),
-  lambda = c(1e-2, 0.1, 1, 100, 1000, 10000),
-  alpha = c(1e-2, 0.1, 1, 100, 1000, 10000)
+  lambda = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
+  alpha = c(0, 1e-2, 0.1, 1, 100, 1000, 10000)
 )
+
+n_by_response <- hyper_grid |>
+  group_by(responses) |>
+  count() |>
+  pull(n) |>
+  unique()
+
+n_models_per_array <- 10
+
+array_nums <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
+array_nums_2 <- array_nums + max(array_nums)
+array_nums_3 <- array_nums + max(array_nums)*2
+
+hyper_grid <- hyper_grid |>
+  mutate(array = c(array_nums, array_nums_2, array_nums_3))
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
@@ -47,8 +62,12 @@ if(is.na(task_id)) task_id <- 6
 message("task id: ", task_id)
 
 y <- hyper_grid |>
-  dplyr::slice(task_id) |>
+  filter(array == task_id) |>
   pull(responses)
+
+testthat::expect_equal(length(unique(y)), 1)
+y <- y[1]
+
 message("\ny: ", y)
 
 df_model <- subset_rename(data, y)
@@ -70,11 +89,17 @@ cv <- trainControl(
 )
 
 tune_grid <- hyper_grid |>
-  dplyr::slice(task_id) |>
-  select(-responses) |>
+  filter(array == task_id) |>
+  select(-responses, -array) |>
   as.data.frame()
 
+message("Fitting xgBoost...")
 start_time <- Sys.time()
+
+message("  make cluster")
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
+
 fit <- train(
   blueprint,
   data = train,
@@ -84,35 +109,25 @@ fit <- train(
   metric = "RMSE"
 )
 
+stopCluster(cl)
+message("  complete!")
+
 total_time <- Sys.time() - start_time
 message("Elapsed time: ")
 print(total_time)
 
-pred <- predict(object = fit, newdata = test)
-pr <- postResample(pred = pred, obs = test$y)
-
-out <- tune_grid |>
-  mutate(
-    RMSE = pr["RMSE"],
-    Rsquared = pr["Rsquared"],
-    MAE = pr["MAE"],
-    response = y
-  )
-
-test_pred <- test |>
-  mutate(predicted_value = pred)
-
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
 filename <- file.path(path, paste0(task_id, ".rds"))
 
-write_rds(
-  list(
-    fit = fit,
-    pred = test_pred,
-    tune_grid = out
-  ),
-  filename
-)
+out <- as_tibble(fit$results)
+write_rds(out, filename)
+
+message("All fits")
+print(out)
+
+message("Best tune")
+print(fit$bestTune)
 
 message("=== DONE ===")
+
 
