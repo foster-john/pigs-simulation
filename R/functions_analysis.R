@@ -13,9 +13,6 @@ ranger_fit <- function(df){
     splitrule = "variance",
     mtry = floor(n_features * c(.15, .25, .333, .4)),
     min.node.size = c(1, 3, 5, 10, 15)
-    # replace = c(TRUE, FALSE),
-    # sample.fraction = c(.5, .63, .8),
-    # rmse = NA
   )
 
   train(
@@ -58,19 +55,6 @@ knn_fit <- function(df){
 }
 
 xgb_fit <- function(df){
-  cv <- trainControl(
-    method = "repeatedcv",
-    number = 10,
-    repeats = 5
-  )
-
-  # Create a hyperparameter grid search
-  hyper_grid <- expand.grid(
-    nrounds = c(100, 500, 1000, 1500),
-    eta = c(0.01, 0.05),
-    lambda = c(0, 1e-2, 0.1, 1, 100),
-    alpha = c(0, 1e-2, 0.1, 1, 100)
-  )
 
   train(
     y ~ .,
@@ -95,33 +79,6 @@ my_recipe <- function(df){
 
   blueprint <- recipe(y ~ ., data = df_train) |>
     step_dummy(all_nominal_predictors()) |>
-    step_interact(terms = ~ starts_with("methods_used"):all_numeric_predictors()) |>
-    step_interact(terms = ~ property_area:take) |>
-    step_interact(terms = ~ property_area:delta) |>
-    step_interact(terms = ~ property_area:mean_effort) |>
-    step_interact(terms = ~ property_area:sum_effort) |>
-    step_interact(terms = ~ property_area:mean_unit_count) |>
-    step_interact(terms = ~ property_area:sum_unit_count) |>
-    step_interact(terms = ~ property_area:n_reps_pp) |>
-    step_interact(terms = ~ take:delta) |>
-    step_interact(terms = ~ take:mean_effort) |>
-    step_interact(terms = ~ take:sum_effort) |>
-    step_interact(terms = ~ take:mean_unit_count) |>
-    step_interact(terms = ~ take:sum_unit_count) |>
-    step_interact(terms = ~ take:n_reps_pp) |>
-    step_interact(terms = ~ delta:mean_effort) |>
-    step_interact(terms = ~ delta:sum_effort) |>
-    step_interact(terms = ~ delta:mean_unit_count) |>
-    step_interact(terms = ~ delta:sum_unit_count) |>
-    step_interact(terms = ~ delta:n_reps_pp) |>
-    step_interact(terms = ~ n_reps_pp:mean_effort) |>
-    step_interact(terms = ~ n_reps_pp:sum_effort) |>
-    step_interact(terms = ~ n_reps_pp:mean_unit_count) |>
-    step_interact(terms = ~ n_reps_pp:sum_unit_count) |>
-    step_interact(terms = ~ mean_effort:mean_unit_count) |>
-    step_interact(terms = ~ mean_effort:sum_unit_count) |>
-    step_interact(terms = ~ sum_effort:mean_unit_count) |>
-    step_interact(terms = ~ sum_effort:sum_unit_count) |>
     step_nzv(all_predictors()) |>
     step_center(all_numeric_predictors()) |>
     step_scale(all_numeric_predictors())
@@ -185,20 +142,18 @@ fit_ml <- function(df, ml, dest){
 
 }
 
-subset_rename <- function(df, y, outlier_quant = 0.995){
+subset_rename <- function(df, y, prop = 0.7){
 
   require(dplyr)
-
-  outlier <- df |>
-    pull(all_of(y)) |>
-    quantile(outlier_quant)
+  require(rsample)
+  set.seed(456)
 
   dat <- df |>
     ungroup() |>
+    mutate(simulation_id = stringr::str_extract(property_id, "[[:graph:]]*(?=-[[:digit:]]*$)"),
+           methods_used = as.factor(methods_used)) |>
     rename(y = all_of(y),
            take = sum_take_density) |>
-    # filter(density > 0,
-    #        y < outlier) |>
     select(-contains("density"), -contains("abundance"), -PPNum, -property, -property_id,
            -extinct, -recovered, -obs_flag, -sum_take, -contains("per_unit"))
 
@@ -206,6 +161,21 @@ subset_rename <- function(df, y, outlier_quant = 0.995){
     dat <- dat |> mutate(y = log(y))
   }
 
-  return(dat)
+  simulations <- dat |> pull(simulation_id) |> unique()
+
+  n_simulations <- length(simulations)
+  n_training <- floor(n_simulations * prop)
+
+  samps <- sample.int(n_simulations, n_training)
+  training_simulations <- simulations[samps]
+
+  train <- dat |>
+    filter(simulation_id %in% training_simulations) |>
+    select(-simulation_id)
+  test <- dat |>
+    filter(!simulation_id %in% training_simulations) |>
+    select(-simulation_id)
+
+  list(train = train, test = test)
 
 }
