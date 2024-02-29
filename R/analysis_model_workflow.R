@@ -109,7 +109,7 @@ write_rds(
   list(
     fit = fit,
     pred = test_pred,
-    out = out
+    tune_grid = out
   ),
   filename
 )
