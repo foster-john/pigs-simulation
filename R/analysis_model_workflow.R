@@ -6,6 +6,7 @@ library(recipes)
 library(rsample)
 library(caret)
 library(ranger)
+library(doParallel)
 
 source("R/functions_analysis.R")
 
