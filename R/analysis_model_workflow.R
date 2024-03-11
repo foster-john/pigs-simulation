@@ -35,39 +35,19 @@ responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
-  responses = c("nm_rmse_density", "mpe_density", "mbias_density"),
+  responses = responses,
   nrounds = c(50, 100, 500, 1000, 2000),
   eta = c(0.05, 0.1),
   lambda = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
   alpha = c(0, 1e-2, 0.1, 1, 100, 1000, 10000)
 )
 
-n_by_response <- hyper_grid |>
-  group_by(responses) |>
-  count() |>
-  pull(n) |>
-  unique()
-
-n_models_per_array <- 10
-
-array_nums <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
-array_nums_2 <- array_nums + max(array_nums)
-array_nums_3 <- array_nums + max(array_nums)*2
-
-hyper_grid <- hyper_grid |>
-  mutate(array = c(array_nums, array_nums_2, array_nums_3))
-
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 6
+if(is.na(task_id)) task_id <- 1
 message("task id: ", task_id)
 
-y <- hyper_grid |>
-  filter(array == task_id) |>
-  pull(responses)
-
-testthat::expect_equal(length(unique(y)), 1)
-y <- y[1]
+y <- responses[task_id]
 
 message("\ny: ", y)
 
@@ -90,18 +70,24 @@ cv <- trainControl(
 )
 
 tune_grid <- hyper_grid |>
-  filter(array == task_id) |>
-  select(-responses, -array) |>
+  select(-responses) |>
   as.data.frame()
+
+n_grid_search <- nrow(tune_grid)
 
 results <- tibble()
 
 message("Fitting xgBoost...")
 start_time <- Sys.time()
 
-for(i in 1:nrow(tune_grid)){
+cl <- makePSOCKcluster(10)
+registerDoParallel(cl)
 
-  message("  [", i, "/", nrow(tune_grid), "]")
+for(i in 1:n_grid_search){
+
+  if(i %% round(n_grid_search*0.05) == 0){
+   message("  [", i, "/", n_grid_search, "] ", round(i/n_grid_search*100), "%")
+  }
 
   i_grid <- tune_grid[i,]
 
@@ -118,6 +104,7 @@ for(i in 1:nrow(tune_grid)){
 
 }
 
+stopCluster(cl)
 message("xgBoost complete!")
 
 total_time <- Sys.time() - start_time
@@ -125,7 +112,7 @@ message("Elapsed time: ")
 print(total_time)
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
-filename <- file.path(path, paste0(task_id, ".rds"))
+filename <- file.path(path, paste0(y, "_xgbLinear.rds"))
 
 out <- results |>
   mutate(response = y)
@@ -133,12 +120,9 @@ out <- results |>
 write_rds(out, filename)
 
 message("All fits")
-print(out)
-
-message("Best tune")
 best_tune <- out |>
-  arrange(RMSE)
-print(best_tune)
+  arrange(RMSE, Rsquared)
+print(head(best_tune, 20))
 
 
 message("=== DONE ===")
