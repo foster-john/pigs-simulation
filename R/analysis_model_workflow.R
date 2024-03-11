@@ -94,24 +94,31 @@ tune_grid <- hyper_grid |>
   select(-responses, -array) |>
   as.data.frame()
 
+results <- tibble()
+
 message("Fitting xgBoost...")
 start_time <- Sys.time()
 
-message("  make cluster")
-cl <- makePSOCKcluster(10)
-registerDoParallel(cl)
+for(i in 1:nrow(tune_grid)){
 
-fit <- train(
-  blueprint,
-  data = train,
-  method = "xgbLinear",
-  trControl = cv,
-  tuneGrid = tune_grid,
-  metric = "RMSE"
-)
+  message("  [", i, "/", nrow(tune_grid), "]")
 
-stopCluster(cl)
-message("  complete!")
+  i_grid <- tune_grid[i,]
+
+  fit <- train(
+    blueprint,
+    data = train,
+    method = "xgbLinear",
+    trControl = cv,
+    tuneGrid = i_grid,
+    metric = "RMSE"
+  )
+
+  results <- rbind(results, fit$results)
+
+}
+
+message("xgBoost complete!")
 
 total_time <- Sys.time() - start_time
 message("Elapsed time: ")
@@ -120,14 +127,19 @@ print(total_time)
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
 filename <- file.path(path, paste0(task_id, ".rds"))
 
-out <- as_tibble(fit$results)
+out <- results |>
+  mutate(response = y)
+
 write_rds(out, filename)
 
 message("All fits")
 print(out)
 
 message("Best tune")
-print(fit$bestTune)
+best_tune <- out |>
+  arrange(RMSE)
+print(best_tune)
+
 
 message("=== DONE ===")
 
