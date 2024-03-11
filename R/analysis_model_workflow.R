@@ -37,9 +37,9 @@ responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
 hyper_grid <- expand_grid(
   responses = responses,
   nrounds = c(50, 100, 500, 1000, 2000),
-  eta = c(0.05, 0.1),
-  lambda = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
-  alpha = c(0, 1e-2, 0.1, 1, 100, 1000, 10000)
+  eta = c(0.05, 0.1, 0.3),
+  lambda = c(0, 1e-2, 0.1, 1, 100),
+  alpha = c(0, 1e-2, 0.1, 1, 100)
 )
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -70,6 +70,7 @@ cv <- trainControl(
 )
 
 tune_grid <- hyper_grid |>
+  filter(responses == y) |>
   select(-responses) |>
   as.data.frame()
 
