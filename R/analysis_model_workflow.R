@@ -47,8 +47,14 @@ task_id <- as.numeric(args[1])
 if(is.na(task_id)) task_id <- 1
 message("task id: ", task_id)
 
-y <- responses[task_id]
+array_grid <- hyper_grid |>
+  slice(task_id)
 
+tune_grid <- array_grid |>
+  select(-responses) |>
+  as.data.frame()
+
+y <- array_grid |> pull(responses)
 message("\ny: ", y)
 
 df_model <- subset_rename(data, y)
@@ -69,43 +75,20 @@ cv <- trainControl(
   repeats = 5
 )
 
-tune_grid <- hyper_grid |>
-  filter(responses == y) |>
-  select(-responses) |>
-  as.data.frame()
-
-n_grid_search <- nrow(tune_grid)
-
-results <- tibble()
-
 message("Fitting xgBoost...")
 start_time <- Sys.time()
 
-cl <- makePSOCKcluster(10)
-registerDoParallel(cl)
+fit <- train(
+  blueprint,
+  data = train,
+  method = "xgbLinear",
+  trControl = cv,
+  tuneGrid = tune_grid,
+  metric = "RMSE"
+)
 
-for(i in 1:n_grid_search){
+results <- fit$results
 
-  if(i %% round(n_grid_search*0.05) == 0){
-   message("  [", i, "/", n_grid_search, "] ", round(i/n_grid_search*100), "%")
-  }
-
-  i_grid <- tune_grid[i,]
-
-  fit <- train(
-    blueprint,
-    data = train,
-    method = "xgbLinear",
-    trControl = cv,
-    tuneGrid = i_grid,
-    metric = "RMSE"
-  )
-
-  results <- rbind(results, fit$results)
-
-}
-
-stopCluster(cl)
 message("xgBoost complete!")
 
 total_time <- Sys.time() - start_time
@@ -121,9 +104,7 @@ out <- results |>
 write_rds(out, filename)
 
 message("All fits")
-best_tune <- out |>
-  arrange(RMSE, Rsquared)
-print(head(best_tune, 20))
+print(out)
 
 
 message("=== DONE ===")
