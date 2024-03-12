@@ -5,8 +5,6 @@ library(purrr)
 library(recipes)
 library(rsample)
 library(caret)
-library(ranger)
-library(doParallel)
 
 source("R/functions_analysis.R")
 
@@ -42,20 +40,40 @@ hyper_grid <- expand_grid(
   alpha = c(0, 1e-2, 0.1, 1, 100)
 )
 
+n_by_response <- hyper_grid |>
+  group_by(responses) |>
+  count() |>
+  pull(n) |>
+  unique()
+
+n_models_per_array <- 15
+
+array_nums_1 <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
+array_nums_2 <- array_nums_1 + max(array_nums_1)
+array_nums_3 <- array_nums_1 + max(array_nums_1)*2
+
+hyper_grid <- hyper_grid |>
+  mutate(array = c(array_nums_1, array_nums_2, array_nums_3))
+
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 1
+if(is.na(task_id)) task_id <- 6
 message("task id: ", task_id)
 
 array_grid <- hyper_grid |>
-  slice(task_id)
+  filter(array == task_id)
+
+y <- array_grid |>
+  pull(responses)
+
+testthat::expect_equal(length(unique(y)), 1)
+y <- y[1]
+
+message("\ny: ", y)
 
 tune_grid <- array_grid |>
-  select(-responses) |>
+  select(-responses, -array) |>
   as.data.frame()
-
-y <- array_grid |> pull(responses)
-message("\ny: ", y)
 
 df_model <- subset_rename(data, y)
 glimpse(df_model)
@@ -87,25 +105,23 @@ fit <- train(
   metric = "RMSE"
 )
 
-results <- fit$results
-
 message("xgBoost complete!")
 
-total_time <- Sys.time() - start_time
-message("Elapsed time: ")
-print(total_time)
-
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
-filename <- file.path(path, paste0(task_id, "_xgbLinear.rds"))
-
-out <- results |>
-  mutate(response = y)
-
-write_rds(out, filename)
+out <- fit$results |>
+  as_tibble() |>
+  mutate(response = y) |>
+  arrange(RMSE)
 
 message("All fits")
 print(out)
 
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
+filename <- file.path(path, paste0(task_id, "_xgbLinear.rds"))
+write_rds(out, filename)
+
+total_time <- Sys.time() - start_time
+message("Elapsed time: ")
+print(total_time)
 
 message("=== DONE ===")
 
