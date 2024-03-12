@@ -96,7 +96,7 @@ message("Elapsed time: ")
 print(total_time)
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
-filename <- file.path(path, paste0(y, "_xgbLinear.rds"))
+filename <- file.path(path, paste0(task_id, "_xgbLinear.rds"))
 
 out <- results |>
   mutate(response = y)
