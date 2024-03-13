@@ -1,10 +1,11 @@
+library(plyr)
 library(dplyr)
 library(tidyr)
 library(readr)
 library(purrr)
 library(recipes)
 library(rsample)
-library(caret)
+library(xgboost)
 
 source("R/functions_analysis.R")
 
@@ -26,30 +27,22 @@ data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
   group_by()
 
-# samps <- sample.int(nrow(data), 5000, replace = FALSE)
-# data <- data |> slice(samps)
-
 responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
   responses = responses,
-  nrounds = c(25, 50, 100, 500, 1000, 2000),
-  eta = c(0.05, 0.1, 0.3, 0.5, 1),
-  lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
-  alpha = c(0, 1e-2, 0.1, 1, 100)
+  eta = c(0.05),
+  max_depth = 3:5,
+  min_child_weight = 1,
+  subsample = 0.5,
+  colsample_bytree = 0.5,
+  gamma = c(0, 1, 10, 100, 1000),
+  lambda = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
+  alpha = c(0, 1e-2, 0.1, 1, 100, 1000, 10000),
+  rmse = 0,
+  trees = 0
 )
-
-# new grids
-# lambda = 1000
-# eta = 0.5, 1
-# nrounds = 25
-
-hyper_grid <- hyper_grid |>
-  filter(lambda == 1000 |
-           eta %in% c(0.5, 1) |
-           nrounds == 25)
-
 
 n_by_response <- hyper_grid |>
   group_by(responses) |>
@@ -57,15 +50,14 @@ n_by_response <- hyper_grid |>
   pull(n) |>
   unique()
 
-n_models_per_array <- 15
+n_models_per_array <- 35
 
 array_nums_1 <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
 array_nums_2 <- array_nums_1 + max(array_nums_1)
 array_nums_3 <- array_nums_1 + max(array_nums_1)*2
 
 hyper_grid <- hyper_grid |>
-  mutate(array = c(array_nums_1, array_nums_2, array_nums_3),
-         array = array + 100)
+  mutate(array = c(array_nums_1, array_nums_2, array_nums_3))
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
@@ -73,7 +65,8 @@ if(is.na(task_id)) task_id <- 6
 message("task id: ", task_id)
 
 array_grid <- hyper_grid |>
-  filter(array == task_id)
+  filter(array == task_id) |>
+  select(-array)
 
 y <- array_grid |>
   pull(responses)
@@ -83,52 +76,59 @@ y <- y[1]
 
 message("\ny: ", y)
 
-tune_grid <- array_grid |>
-  select(-responses, -array) |>
-  as.data.frame()
-
 df_model <- subset_rename(data, y)
-glimpse(df_model)
+message("\nTraining data:")
+glimpse(df_model$train)
 
-train <- df_model$train
-test <- df_model$test
+baked_data <- my_recipe(df_model$train, df_model$test)
 
-blueprint <- recipe(y ~ ., data = train) |>
-  step_dummy(all_nominal_predictors()) |>
-  step_nzv(all_predictors()) |>
-  step_center(all_numeric_predictors()) |>
-  step_scale(all_numeric_predictors())
-
-cv <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 5
-)
+train_data <- baked_data$df_train
+X <- train_data |>
+  select(-y) |>
+  as.matrix()
+Y <- train_data |> pull(y)
 
 message("Fitting xgBoost...")
 start_time <- Sys.time()
 
-fit <- train(
-  blueprint,
-  data = train,
-  method = "xgbLinear",
-  trControl = cv,
-  tuneGrid = tune_grid,
-  metric = "RMSE"
-)
-
+# grid search
+for(i in seq_len(nrow(array_grid))) {
+  message("[", i, "/", nrow(array_grid), "]")
+  set.seed(123)
+  m <- xgb.cv(
+    data = X,
+    label = Y,
+    nrounds = 5000,
+    objective = "reg:squarederror",
+    metrics = "rmse",
+    early_stopping_rounds = 50,
+    nfold = 10,
+    verbose = 0,
+    params = list(
+      eta = array_grid$eta[i],
+      max_depth = array_grid$max_depth[i],
+      min_child_weight = array_grid$min_child_weight[i],
+      subsample = array_grid$subsample[i],
+      colsample_bytree = array_grid$colsample_bytree[i],
+      gamma = array_grid$gamma[i],
+      lambda = array_grid$lambda[i],
+      alpha = array_grid$alpha[i]
+    )
+  )
+  array_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
+  array_grid$trees[i] <- m$best_iteration
+}
 message("xgBoost complete!")
 
-out <- fit$results |>
+out <- array_grid |>
   as_tibble() |>
-  mutate(response = y) |>
-  arrange(RMSE)
+  arrange(rmse)
 
 message("All fits")
 print(out)
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
-filename <- file.path(path, paste0(task_id, "_xgbLinear.rds"))
+filename <- file.path(path, paste0("xgbTree_", task_id, ".rds"))
 write_rds(out, filename)
 
 total_time <- Sys.time() - start_time
