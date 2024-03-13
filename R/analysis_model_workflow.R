@@ -34,11 +34,22 @@ responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
 # hyperparameter grid
 hyper_grid <- expand_grid(
   responses = responses,
-  nrounds = c(50, 100, 500, 1000, 2000),
-  eta = c(0.05, 0.1, 0.3),
-  lambda = c(0, 1e-2, 0.1, 1, 100),
+  nrounds = c(25, 50, 100, 500, 1000, 2000),
+  eta = c(0.05, 0.1, 0.3, 0.5, 1),
+  lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
   alpha = c(0, 1e-2, 0.1, 1, 100)
 )
+
+# new grids
+# lambda = 1000
+# eta = 0.5, 1
+# nrounds = 25
+
+hyper_grid <- hyper_grid |>
+  filter(lambda == 1000 |
+           eta %in% c(0.5, 1) |
+           nrounds == 25)
+
 
 n_by_response <- hyper_grid |>
   group_by(responses) |>
@@ -53,7 +64,8 @@ array_nums_2 <- array_nums_1 + max(array_nums_1)
 array_nums_3 <- array_nums_1 + max(array_nums_1)*2
 
 hyper_grid <- hyper_grid |>
-  mutate(array = c(array_nums_1, array_nums_2, array_nums_3))
+  mutate(array = c(array_nums_1, array_nums_2, array_nums_3),
+         array = array + 100)
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
