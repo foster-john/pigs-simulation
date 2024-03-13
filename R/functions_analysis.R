@@ -149,7 +149,7 @@ subset_rename <- function(df, y, prop = 0.7){
     rename(y = all_of(y),
            take = sum_take_density) |>
     select(-contains("density"), -contains("abundance"), -PPNum, -property, -property_id,
-           -extinct, -recovered, -obs_flag, -sum_take, -contains("per_unit"))
+           -extinct, -recovered, -obs_flag, -sum_take)
 
   if(y != "mbias_density"){
     dat <- dat |> mutate(y = log(y))
