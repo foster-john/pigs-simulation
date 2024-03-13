@@ -73,7 +73,7 @@ my_recipe <- function(df_train, df_test){
 
   blueprint <- recipe(y ~ ., data = df_train) |>
     step_dummy(all_nominal_predictors()) |>
-    # step_nzv(all_predictors()) |>
+    step_nzv(all_predictors()) |>
     step_center(all_numeric_predictors()) |>
     step_scale(all_numeric_predictors())
 
