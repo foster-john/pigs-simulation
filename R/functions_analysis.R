@@ -67,19 +67,13 @@ xgb_fit <- function(df){
 }
 
 
-my_recipe <- function(df){
+my_recipe <- function(df_train, df_test){
   require(rsample)
   require(recipes)
 
-  split <- initial_split(df, prop = 0.6,
-                         strata = "methods_used")
-
-  df_train <- training(split)
-  df_test <- testing(split)
-
   blueprint <- recipe(y ~ ., data = df_train) |>
     step_dummy(all_nominal_predictors()) |>
-    step_nzv(all_predictors()) |>
+    # step_nzv(all_predictors()) |>
     step_center(all_numeric_predictors()) |>
     step_scale(all_numeric_predictors())
 
