@@ -136,7 +136,7 @@ fit_ml <- function(df, ml, dest){
 
 }
 
-subset_rename <- function(df, y, prop = 0.7){
+subset_rename <- function(df, y, prop = 0.8){
 
   require(dplyr)
   require(rsample)
@@ -147,9 +147,12 @@ subset_rename <- function(df, y, prop = 0.7){
     mutate(simulation_id = stringr::str_extract(property_id, "[[:graph:]]*(?=-[[:digit:]]*$)"),
            methods_used = as.factor(methods_used)) |>
     rename(y = all_of(y),
-           take = sum_take_density) |>
+           sum_take_d = sum_take_density) |>
+    group_by(property_id) |>
+    mutate(delta = c(NA, diff(PPNum))) |>
+    ungroup() |>
     select(-contains("density"), -contains("abundance"), -PPNum, -property, -property_id,
-           -extinct, -recovered, -obs_flag, -sum_take)
+           -extinct, -recovered, -obs_flag)
 
   if(y != "mbias_density"){
     dat <- dat |> mutate(y = log(y))
