@@ -33,6 +33,7 @@ best_model <- hyper_grid |>
 
 # model_dir <- "betaSurvival_uniqueAreaTrapSnare"
 # path <- file.path(analysis_dir, model_dir)
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, config$model_dir)
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
   filter(density > 0)
@@ -170,6 +171,7 @@ out <- list(
 )
 
 message("Write rds")
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 dest <- file.path(path, paste0(ylab, "_xgBoostAnalysis.rds"))
 write_rds(out, dest)
 
