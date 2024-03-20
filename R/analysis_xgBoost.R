@@ -129,7 +129,7 @@ df_test <- best_pred$test
 df_train <- best_pred$train
 fit <- best_pred$fit
 
-if(id <= 2){
+if(task_id <= 2){
   col <- c("sum_take", "sum_take_d", "property_area")
   cols <- expand_grid(col1 = col, col2 = col)
 } else {
