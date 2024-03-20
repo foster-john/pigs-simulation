@@ -143,7 +143,7 @@ cols <- cols |>
 
 message("Single dependence...")
 single_dependence <- list()
-pb <- txtProgressBar(max = length(col), style = 3)
+pb <- txtProgressBar(max = length(col), style = 1)
 for(i in seq_along(col)){
   pdp_s <- partial_dependence(col[i], df_train, fit)
   single_dependence[[col[i]]] <- pdp_s
@@ -153,8 +153,8 @@ close(pb)
 
 message("Pair dependence...")
 pair_dependence <- list()
-pb <- txtProgressBar(max = nrow(cols), style = 3)
-for(i in seq_along(col)){
+pb <- txtProgressBar(max = nrow(cols), style = 1)
+for(i in seq_len(nrow(cols))){
   x <- cols |>
     dplyr::slice(i) |>
     as_vector()
