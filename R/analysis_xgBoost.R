@@ -31,8 +31,8 @@ best_model <- hyper_grid |>
   filter(rmse == min(rmse)) |>
   ungroup()
 
-model_dir <- "betaSurvival_uniqueAreaTrapSnare"
-path <- file.path(analysis_dir, model_dir)
+# model_dir <- "betaSurvival_uniqueAreaTrapSnare"
+# path <- file.path(analysis_dir, model_dir)
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
   filter(density > 0)
