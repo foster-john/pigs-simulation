@@ -1,0 +1,180 @@
+library(dplyr)
+library(tidyr)
+library(readr)
+library(purrr)
+library(recipes)
+library(rsample)
+library(xgboost)
+source("R/functions_analysis.R")
+
+args <- commandArgs(trailingOnly = TRUE)
+task_id <- as.numeric(args[1])
+message("task id: ", task_id)
+
+analysis_dir <- "analysis"
+model_dir <- "MLs"
+path <- file.path(analysis_dir, model_dir)
+
+config_name <- "hpc_production"
+config <- config::get(config = config_name)
+top_dir <- config$top_dir
+analysis_dir <- config$analysis_dir
+dev_dir <- config$dev_dir
+model_dir <- "gradientBoosting"
+project_dir <- config$project_dir
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+
+hyper_grid <- read_rds(file.path(path, "xgTreeResults.rds"))
+
+best_model <- hyper_grid |>
+  group_by(responses) |>
+  filter(rmse == min(rmse)) |>
+  ungroup()
+
+model_dir <- "betaSurvival_uniqueAreaTrapSnare"
+path <- file.path(analysis_dir, model_dir)
+data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
+  ungroup() |>
+  filter(density > 0)
+
+responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
+
+train_best_pred <- function(data, y){
+  df_model <- subset_rename(data, y)
+
+  split_train <- df_model$train
+  split_test <- df_model$test
+
+  baked_data <- my_recipe(split_train, split_test)
+  train <- baked_data$df_train
+  test <- baked_data$df_test
+
+  tune_grid <- best_model |>
+    filter(responses == y)
+
+  params <- list(
+    eta = pull(tune_grid, eta),
+    max_depth = pull(tune_grid, max_depth),
+    min_child_weight = pull(tune_grid, min_child_weight),
+    subsample = pull(tune_grid, subsample),
+    colsample_bytree = pull(tune_grid, colsample_bytree),
+    gamma = pull(tune_grid, gamma),
+    lambda = pull(tune_grid, lambda),
+    alpha = pull(tune_grid, alpha)
+  )
+
+  X <- train |>
+    select(-y) |>
+    as.matrix()
+  Y <- train |> pull(y)
+
+  # train final model
+  fit <- xgboost(
+    params = params,
+    data = X,
+    label = Y,
+    nrounds = pull(tune_grid, trees),
+    objective = "reg:squarederror",
+    verbose = 0
+  )
+
+  newdata <- test |>
+    select(-y) |>
+    as.matrix()
+  pred <- predict(fit, newdata)
+
+  test <- test |>
+    mutate(pred = pred)
+
+  rmse <- sqrt(mean((test$y - pred)^2))
+  r2 <- cor(test$y, pred)^2
+  vi <- xgb.importance(model = fit)
+  vi$gainRelative <- vi$Gain / max(vi$Gain)
+
+  return(
+    list(
+      fit = fit,
+      train = X,
+      test = test,
+      rmse = rmse,
+      r2 = r2,
+      vi = vi
+    )
+  )
+
+}
+
+partial_dependence <- function(col, train_dat, fit){
+
+  require(doParallel)
+  cl <- makeCluster(4) # use 4 workers
+  registerDoParallel(cl) # register the parallel backend
+
+  df <- pdp::partial(fit, col, train = train_dat, plot = FALSE, parallel = TRUE)
+
+  stopCluster(cl)
+
+  as_tibble(df)
+
+}
+
+ylab <- responses[task_id]
+message("Response: ", ylab)
+
+best_pred <- train_best_pred(data, ylab)
+best_pred$vi
+
+df_test <- best_pred$test
+df_train <- best_pred$train
+fit <- best_pred$fit
+
+if(id <= 2){
+  col <- c("sum_take", "sum_take_d", "property_area")
+  cols <- expand_grid(col1 = col, col2 = col)
+} else {
+  col <- c("sum_take", "sum_take_d", "property_area", "sum_effort",
+           "mean_effort", "sum_effort_per_unit", "mean_effort_per_unit")
+  cols <- expand_grid(col1 = col, col2 = col)
+}
+
+cols <- cols |>
+  filter(col1 != col2)
+
+message("Single dependence...")
+single_dependence <- list()
+pb <- txtProgressBar(max = length(col), style = 3)
+for(i in seq_along(col)){
+  pdp_s <- partial_dependence(col[i], df_train, fit)
+  single_dependence[[col[i]]] <- pdp_s
+  setTxtProgressBar(pb, i)
+}
+close(pb)
+
+message("Pair dependence...")
+pair_dependence <- list()
+pb <- txtProgressBar(max = nrow(cols), style = 3)
+for(i in seq_along(col)){
+  x <- cols |>
+    dplyr::slice(i) |>
+    as_vector()
+  pdp_d <- partial_dependence(x, df_train, fit)
+  pair_dependence[[i]] <- pdp_d
+  setTxtProgressBar(pb, i)
+}
+close(pb)
+
+out <- list(
+  pred = best_pred,
+  single_dependence = single_dependence,
+  pair_dependence = pair_dependence
+)
+
+message("Write rds")
+dest <- file.path(path, paste0(ylab, "_xgBoostAnalysis.rds"))
+write_rds(out, dest)
+
+message("Done!")
+
+
+
+
