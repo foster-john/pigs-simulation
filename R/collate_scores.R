@@ -61,6 +61,7 @@ abundance_summary <- map_files2(density_dirs, "abundance_summaries.rds") |>
   left_join(property_ids)
 
 a_join <- left_join(abundance_summary, abundance_error_by_observation)
+
 density <- a_join |> select(start_density, PPNum, contains("property"), contains("abundance"), contains("density"), obs_flag) |>
   mutate(recovered = if_else(abundance >= low_abundance & density <= high_abundance, "Recovered", "Not Recovered"),
          extinct = if_else(abundance == 0, "Extinct", "Extant"))

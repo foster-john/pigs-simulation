@@ -29,11 +29,13 @@ all_area <- tasks_ls$all_area
 all_theta <- tasks_ls$all_theta
 all_p <- tasks_ls$all_p
 all_psrf <- tasks_ls$all_psrf
+all_land_cover <- tasks_ls$all_land_cover
 
 path <- get_path("write", config_name, task_id)
 if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
 write_rds(all_methods, file.path(path, "method_parameter_lookup.rds"))
+write_rds(all_land_cover, file.path(path, "land_cover_lookup.rds"))
 
 data_model_summaries <- list(
   theta = all_theta,

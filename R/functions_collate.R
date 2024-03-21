@@ -170,6 +170,16 @@ bind_methods <- function(all_bind, ls, t_id, dens){
   bind_rows(all_bind, method_lookup)
 }
 
+bind_land_cover <- function(all_bind, ls, t_id, dens){
+  land_cover <- ls$data$X_p
+  colnames(land_cover) <- c("c_road_den", "c_rugged", "c_canopy")
+  land_cover <- land_cover |>
+    as_tibble() |>
+    mutate(county = 1:n()) |>
+    add_ids(t_id, dens)
+  bind_rows(all_bind, land_cover)
+}
+
 bind_psrf <- function(all_bind, ls, t_id, dens){
   names <- rownames(ls$psrf)
   psrf <- ls$psrf |>
@@ -317,6 +327,7 @@ get_tasks <- function(density_tasks, path, nodes){
     all_theta <- tibble()
     all_p <- tibble()
     all_psrf <- tibble()
+    all_land_cover <- tibble()
   }
 
   if(nodes == "abundance"){
@@ -369,6 +380,7 @@ get_tasks <- function(density_tasks, path, nodes){
       all_theta <- bind_post_summaries(all_theta, "posterior_theta", rds, task_id, start_density)
       all_p <- bind_post_summaries(all_p, "posterior_p", rds, task_id, start_density)
       all_psrf <- bind_psrf(all_psrf, rds, task_id, start_density)
+      all_land_cover <- bind_land_cover(all_land_cover, rds, task_id, start_density)
     }
 
     if(nodes == "abundance"){
@@ -416,6 +428,7 @@ get_tasks <- function(density_tasks, path, nodes){
     ls$all_theta <- all_theta
     ls$all_p <- all_p
     ls$all_psrf <- all_psrf
+    ls$all_land_cover <- all_land_cover
   }
 
   if(nodes == "abundance"){
