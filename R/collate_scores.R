@@ -60,9 +60,13 @@ abundance_error_by_observation <- map_files2(density_dirs, f_name) |>
 abundance_summary <- map_files2(density_dirs, "abundance_summaries.rds") |>
   left_join(property_ids)
 
-a_join <- left_join(abundance_summary, abundance_error_by_observation)
+f_name <- "land_cover_lookup.rds"
+df <- map_files2(density_dirs, f_name)
 
-density <- a_join |> select(start_density, PPNum, contains("property"), contains("abundance"), contains("density"), obs_flag) |>
+a_join <- left_join(abundance_summary, df)
+b_join <- left_join(a_join, abundance_error_by_observation)
+
+density <- b_join |> select(start_density, PPNum, contains("property"), contains("abundance"), contains("density"), contains("c_"), obs_flag) |>
   mutate(recovered = if_else(abundance >= low_abundance & density <= high_abundance, "Recovered", "Not Recovered"),
          extinct = if_else(abundance == 0, "Extinct", "Extant"))
 
