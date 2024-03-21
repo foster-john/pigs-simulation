@@ -24,9 +24,10 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
-  filter(density > 0)
+  filter(density > 0) |>
+  mutate(mbias_density_class = as.numeric(mbias_density > 0))
 
-responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
+responses <- c("nm_rmse_density", "mpe_density", "mbias_density_reg", "mbias_density_class")
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
@@ -49,15 +50,16 @@ n_by_response <- hyper_grid |>
   pull(n) |>
   unique()
 
-n_models_per_array <- 210
+n_models_per_array <- 105
 
 array_nums_1 <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
 array_nums_2 <- array_nums_1 + max(array_nums_1)
 array_nums_3 <- array_nums_1 + max(array_nums_1)*2
-max(array_nums_3)
+array_nums_4 <- array_nums_1 + max(array_nums_1)*3
+max(array_nums_4)
 
 hyper_grid <- hyper_grid |>
-  mutate(array = c(array_nums_1, array_nums_2, array_nums_3))
+  mutate(array = c(array_nums_1, array_nums_2, array_nums_3, array_nums_4))
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
@@ -91,6 +93,8 @@ Y <- train_data |> pull(y)
 message("Fitting xgBoost...")
 start_time <- Sys.time()
 
+objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
+
 # grid search
 for(i in seq_len(nrow(array_grid))) {
 
@@ -103,7 +107,7 @@ for(i in seq_len(nrow(array_grid))) {
     data = X,
     label = Y,
     nrounds = 5000,
-    objective = "reg:squarederror",
+    objective = objective,
     metrics = "rmse",
     early_stopping_rounds = 50,
     nfold = 10,
