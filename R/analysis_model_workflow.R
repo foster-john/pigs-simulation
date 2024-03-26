@@ -6,7 +6,7 @@ library(purrr)
 library(recipes)
 library(rsample)
 library(xgboost)
-
+library(doParallel)
 source("R/functions_analysis.R")
 
 analysis_dir <- "analysis"
@@ -92,10 +92,17 @@ X <- train_data |>
   as.matrix()
 Y <- train_data |> pull(y)
 
+objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
+
 message("Fitting xgBoost...")
 start_time <- Sys.time()
+cl <- makeCluster(10)
+registerDoParallel(cl) # register a parallel backend
+clusterExport(cl, c('X' ,'Y', 'array_grid', 'objective')) # import objects outside
+clusterEvalQ(cl,expr= { # launch library to be used in FUN
+  library(xgboost)
+})
 
-objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
 
 # grid search
 start_time <- Sys.time()
