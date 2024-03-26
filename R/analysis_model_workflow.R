@@ -100,7 +100,7 @@ cl <- makeCluster(10)
 registerDoParallel(cl) # register a parallel backend
 clusterExport(cl, c('X' ,'Y', 'array_grid', 'objective')) # import objects outside
 clusterEvalQ(cl,expr= { # launch library to be used in FUN
-  library(xgboost)
+ library(xgboost)
 })
 
 
