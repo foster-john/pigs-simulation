@@ -111,7 +111,7 @@ out <- foreach(i = 1:3, .packages = c("xgboost"), .combine = rbind) %dopar% {
     metrics = "rmse",
     early_stopping_rounds = 50,
     nfold = 10,
-    nthread = 10,
+    # nthread = 10,
     verbose = 0,
     params = list(
       eta = array_grid$eta[i],
