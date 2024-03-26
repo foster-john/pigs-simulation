@@ -66,6 +66,8 @@ task_id <- as.numeric(args[1])
 if(is.na(task_id)) task_id <- 6
 message("task id: ", task_id)
 
+### start at 209!!
+
 array_grid <- hyper_grid |>
   filter(array == task_id) |>
   select(-array)
@@ -96,12 +98,14 @@ start_time <- Sys.time()
 objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
 
 # grid search
+start_time <- Sys.time()
 for(i in seq_len(nrow(array_grid))) {
 
   if(i %% 10 == 0){
     message("[", i, "/", nrow(array_grid), "] ", round(i/nrow(array_grid)*100), "%")
   }
 
+  start_time <- Sys.time()
   set.seed(123)
   m <- xgb.cv(
     data = X,
@@ -111,6 +115,7 @@ for(i in seq_len(nrow(array_grid))) {
     metrics = "rmse",
     early_stopping_rounds = 50,
     nfold = 10,
+    nthread = 10,
     verbose = 0,
     params = list(
       eta = array_grid$eta[i],
@@ -125,8 +130,17 @@ for(i in seq_len(nrow(array_grid))) {
   )
   array_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
   array_grid$trees[i] <- m$best_iteration
+
+  total_time <- Sys.time() - start_time
+  message("Elapsed time: ")
+  print(total_time)
+
 }
 message("xgBoost complete!")
+
+total_time <- Sys.time() - start_time
+message("Elapsed time: ")
+print(total_time)
 
 out <- array_grid |>
   as_tibble() |>
