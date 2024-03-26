@@ -143,6 +143,7 @@ for(i in seq_len(nrow(array_grid))) {
   print(total_time)
 
 }
+stopCluster(cl)
 message("xgBoost complete!")
 
 total_time <- Sys.time() - start_time
