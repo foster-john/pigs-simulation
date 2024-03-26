@@ -105,7 +105,7 @@ for(i in seq_len(nrow(array_grid))) {
     message("[", i, "/", nrow(array_grid), "] ", round(i/nrow(array_grid)*100), "%")
   }
 
-  start_time <- Sys.time()
+  model_time <- Sys.time()
   set.seed(123)
   m <- xgb.cv(
     data = X,
@@ -131,8 +131,8 @@ for(i in seq_len(nrow(array_grid))) {
   array_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
   array_grid$trees[i] <- m$best_iteration
 
-  total_time <- Sys.time() - start_time
-  message("Elapsed time: ")
+  total_time <- Sys.time() - model_time
+  message("Model time: ")
   print(total_time)
 
 }
