@@ -7,6 +7,7 @@ library(recipes)
 library(rsample)
 library(xgboost)
 library(doParallel)
+library(foreach)
 source("R/functions_analysis.R")
 
 analysis_dir <- "analysis"
@@ -63,7 +64,7 @@ hyper_grid <- hyper_grid |>
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 6
+if(is.na(task_id)) task_id <- 209
 message("task id: ", task_id)
 
 ### start at 209!!
@@ -96,12 +97,45 @@ objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squared
 
 message("Fitting xgBoost...")
 start_time <- Sys.time()
-cl <- makeCluster(10)
+cl <- makeCluster(3)
 registerDoParallel(cl) # register a parallel backend
 clusterExport(cl, c('X' ,'Y', 'array_grid', 'objective')) # import objects outside
-clusterEvalQ(cl,expr= { # launch library to be used in FUN
- library(xgboost)
-})
+
+out <- foreach(i = 1:3, .packages = c("xgboost"), .combine = rbind) %dopar% {
+
+  m <- xgb.cv(
+    data = X,
+    label = Y,
+    nrounds = 5000,
+    objective = objective,
+    metrics = "rmse",
+    early_stopping_rounds = 50,
+    nfold = 10,
+    nthread = 10,
+    verbose = 0,
+    params = list(
+      eta = array_grid$eta[i],
+      max_depth = array_grid$max_depth[i],
+      min_child_weight = array_grid$min_child_weight[i],
+      subsample = array_grid$subsample[i],
+      colsample_bytree = array_grid$colsample_bytree[i],
+      gamma = array_grid$gamma[i],
+      lambda = array_grid$lambda[i],
+      alpha = array_grid$alpha[i]
+    )
+  )
+  # define grid for output
+  out_grid <- array_grid[i,]
+  out_grid$rmse <- min(m$evaluation_log$test_rmse_mean)
+  out_grid$trees <- m$best_iteration
+  out_grid
+}
+
+stopCluster(cl)
+
+total_time <- Sys.time() - start_time
+message("Elapsed (foreach) time: ")
+print(total_time)
 
 
 # grid search
@@ -143,11 +177,8 @@ for(i in seq_len(nrow(array_grid))) {
   print(total_time)
 
 }
-message("xgBoost complete!")
 
-total_time <- Sys.time() - start_time
-message("Elapsed time: ")
-print(total_time)
+message("xgBoost complete!")
 
 out <- array_grid |>
   as_tibble() |>
