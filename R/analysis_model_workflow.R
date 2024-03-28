@@ -63,8 +63,6 @@ message("task id: ", task_id)
 task_grid <- eta_grid |>
   filter(task == task_id)
 
-array_grid <- bind_cols(hyper_grid, task_grid)
-
 y <- task_grid |>
   pull(responses)
 
@@ -73,7 +71,17 @@ message("\ny: ", y)
 eta <- task_grid |>
   pull(eta)
 message("eta: ", eta)
-message("Number of threads: ", Sys.getenv("OMP_NUM_THREADS"))
+# message("Number of threads: ", Sys.getenv("OMP_NUM_THREADS"))
+
+array_grid <- bind_cols(hyper_grid, task_grid)
+
+total_cores <- 24
+n_threads <- 2
+n_models_per_loop <- total_cores / n_threads
+n_loops <- nrow(array_grid) / n_models_per_loop
+
+array_grid <- array_grid |>
+  mutate(task = rep(1:n_loops, each = n_models_per_loop))
 
 df_model <- subset_rename(data, y)
 baked_data <- my_recipe(df_model$train, df_model$test)
@@ -86,9 +94,10 @@ Y <- train_data |> pull(y)
 
 objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
 
-fit_xgBoost <- function(i, X, Y, objective, array_grid, omp_thread = Sys.getenv("OMP_NUM_THREADS")){
+fit_xgBoost <- function(i, array_grid){
 
   set.seed(123)
+  out_grid <- array_grid[i,]
   xgb.cv(
     data = X,
     label = Y,
@@ -97,7 +106,7 @@ fit_xgBoost <- function(i, X, Y, objective, array_grid, omp_thread = Sys.getenv(
     metrics = "rmse",
     early_stopping_rounds = 50,
     nfold = 10,
-    nthread = as.numeric(omp_thread),
+    nthread = 2,
     verbose = 0,
     params = list(
       eta = array_grid$eta[i],
@@ -110,14 +119,32 @@ fit_xgBoost <- function(i, X, Y, objective, array_grid, omp_thread = Sys.getenv(
       alpha = array_grid$alpha[i]
     )
   )
+
+  out_grid$rmse <- min(m$evaluation_log$test_rmse_mean)
+  out_grid$trees <- m$best_iteration
+  out_grid
 }
+
+model_time <- Sys.time()
+for(j in 1:1){
+  J <- array_grid |> filter(task == j)
+  cl <- makeCluster(n_models_per_loop)
+  registerDoParallel(cl)
+  foreach::foreach(i = 1:n_models_per_loop, .combine = rbind, .inorder = FALSE) %dopar% fit_xgBoost(i, J)
+
+}
+
+total_time <- Sys.time() - model_time
+print(round(total_time, 2))
+
+stop()
 
 # grid search
 message("Begin grid search...")
 for(i in seq_len(nrow(array_grid))) {
 
   model_time <- Sys.time()
-  m <- fit_xgBoost(i, X, Y, objective, array_grid)
+  m <- fit_xgBoost(i, X, Y, objective, array_grid, 4)
   total_time <- Sys.time() - model_time
 
   if(i == 1 | i %% 20 == 0){
