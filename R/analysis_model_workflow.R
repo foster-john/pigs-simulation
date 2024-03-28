@@ -98,7 +98,7 @@ fit_xgBoost <- function(i, array_grid){
 
   set.seed(123)
   out_grid <- array_grid[i,]
-  xgb.cv(
+  m <- xgb.cv(
     data = X,
     label = Y,
     nrounds = 5000,
