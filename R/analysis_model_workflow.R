@@ -117,7 +117,7 @@ message("Begin grid search...")
 for(i in seq_len(nrow(array_grid))) {
 
   model_time <- Sys.time()
-  m <- fit_xgBoost(eta, X, Y, objective, params)
+  m <- fit_xgBoost(i, X, Y, objective, array_grid)
   total_time <- Sys.time() - model_time
 
   if(i == 1 | i %% 20 == 0){
