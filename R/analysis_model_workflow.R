@@ -131,7 +131,13 @@ for(j in 1:1){
   J <- array_grid |> filter(task == j)
   cl <- makeCluster(n_models_per_loop)
   registerDoParallel(cl)
-  out <- foreach::foreach(i = 1:n_models_per_loop, .combine = rbind, .inorder = FALSE) %dopar% fit_xgBoost(i, J)
+  out <- foreach::foreach(
+    i = 1:n_models_per_loop,
+    .combine = rbind,
+    .inorder = FALSE,
+    .packages = "xgBoost"
+    ) %dopar%
+    fit_xgBoost(i, J)
 
 }
 
