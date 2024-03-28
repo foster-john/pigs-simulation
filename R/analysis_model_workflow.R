@@ -48,6 +48,7 @@ message("\ny: ", y)
 
 eta <- task$eta
 message("eta: ", eta)
+message("Number of threads: ", Sys.getenv("OMP_NUM_THREADS"))
 
 df_model <- subset_rename(data, y)
 baked_data <- my_recipe(df_model$train, df_model$test)
