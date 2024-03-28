@@ -127,11 +127,14 @@ fit_xgBoost <- function(i, array_grid){
 
 all_out <- tibble()
 message("Begin grid search...")
-model_time <- Sys.time()
-for(j in 1:1){
-  J <- array_grid |> filter(task == j)
+for(j in seq_len(n_loops)){
+
+  model_time <- Sys.time()
+
   cl <- makeCluster(n_models_per_loop)
   registerDoParallel(cl)
+
+  J <- array_grid |> filter(task == j)
   out <- foreach::foreach(
     i = 1:n_models_per_loop,
     .combine = rbind,
@@ -139,37 +142,19 @@ for(j in 1:1){
     .packages = c("xgboost")
     ) %dopar%
     fit_xgBoost(i, J)
+
   stopCluster(cl)
+
   all_out <- bind_rows(all_out, as_tibble(out))
-}
-
-total_time <- Sys.time() - model_time
-print(round(total_time, 2))
-out
-stop()
-
-# grid search
-message("Begin grid search...")
-for(i in seq_len(nrow(array_grid))) {
-
-  model_time <- Sys.time()
-  m <- fit_xgBoost(i, X, Y, objective, array_grid, 4)
   total_time <- Sys.time() - model_time
-
-  if(i == 1 | i %% 20 == 0){
-    per <- round(i / nrow(array_grid) * 100, 1)
-    message("[", i, "/", nrow(array_grid), "] ", per, "% ")
-    print(round(total_time, 2))
-  }
-
-  array_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
-  array_grid$trees[i] <- m$best_iteration
+  message("\n[", j, "/", n_loops, "]")
+  print(round(total_time, 2))
 
 }
 
 message("Grid seach complete!")
 
-out <- array_grid |>
+out <- all_out |>
   as_tibble() |>
   arrange(rmse)
 
@@ -177,7 +162,7 @@ message("All fits")
 print(out)
 
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
-filename <- file.path(path, paste0("xgbTree_", task_id, ".rds"))
+filename <- file.path(path, paste0("xgbTree_", y, ".rds"))
 write_rds(out, filename)
 
 message("=== DONE ===\n\n")
