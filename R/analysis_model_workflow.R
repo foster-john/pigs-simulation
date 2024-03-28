@@ -97,7 +97,7 @@ objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squared
 
 message("Fitting xgBoost...")
 start_time <- Sys.time()
-cl <- makeCluster(3)
+cl <- makeCluster(8)
 registerDoParallel(cl) # register a parallel backend
 clusterExport(cl, c('X' ,'Y', 'array_grid', 'objective')) # import objects outside
 
