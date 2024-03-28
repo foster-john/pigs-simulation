@@ -125,6 +125,7 @@ fit_xgBoost <- function(i, array_grid){
   out_grid
 }
 
+all_out <- tibble()
 message("Begin grid search...")
 model_time <- Sys.time()
 for(j in 1:1){
@@ -135,10 +136,11 @@ for(j in 1:1){
     i = 1:n_models_per_loop,
     .combine = rbind,
     .inorder = FALSE,
-    .packages = "xgBoost"
+    .packages = c("xgboost")
     ) %dopar%
     fit_xgBoost(i, J)
-
+  stopCluster(cl)
+  all_out <- bind_rows(all_out, as_tibble(out))
 }
 
 total_time <- Sys.time() - model_time
