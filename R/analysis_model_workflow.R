@@ -125,18 +125,19 @@ fit_xgBoost <- function(i, array_grid){
   out_grid
 }
 
+message("Begin grid search...")
 model_time <- Sys.time()
 for(j in 1:1){
   J <- array_grid |> filter(task == j)
   cl <- makeCluster(n_models_per_loop)
   registerDoParallel(cl)
-  foreach::foreach(i = 1:n_models_per_loop, .combine = rbind, .inorder = FALSE) %dopar% fit_xgBoost(i, J)
+  out <- foreach::foreach(i = 1:n_models_per_loop, .combine = rbind, .inorder = FALSE) %dopar% fit_xgBoost(i, J)
 
 }
 
 total_time <- Sys.time() - model_time
 print(round(total_time, 2))
-
+out
 stop()
 
 # grid search
