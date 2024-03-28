@@ -38,12 +38,12 @@ responses <- c("nm_rmse_density", "mpe_density", "mbias_density_reg", "mbias_den
 
 eta_grid <- tibble(
   responses = responses,
-  eta = c(0.1, 0.1, 0.3, 0.1)
+  eta = c(0.1, 0.1, 0.3, 0.1),
+  task = 1:length(responses)
 )
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
-  responses = responses,
   max_depth = 3:8,
   min_child_weight = c(0.5, 1),
   subsample = c(0.5, 1),
@@ -55,41 +55,22 @@ hyper_grid <- expand_grid(
   trees = 0
 )
 
-n_by_response <- hyper_grid |>
-  group_by(responses) |>
-  count() |>
-  pull(n) |>
-  unique()
-
-n_models_per_array <- 240
-
-array_nums_1 <- rep(seq(1, ceiling(n_by_response / n_models_per_array)), each = n_models_per_array)
-array_nums_2 <- array_nums_1 + max(array_nums_1)
-array_nums_3 <- array_nums_1 + max(array_nums_1)*2
-array_nums_4 <- array_nums_1 + max(array_nums_1)*3
-max(array_nums_4)
-
-hyper_grid <- hyper_grid |>
-  mutate(array = c(array_nums_1, array_nums_2, array_nums_3, array_nums_4))
-
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 20
+if(is.na(task_id)) task_id <- 1
 message("task id: ", task_id)
 
-array_grid <- hyper_grid |>
-  filter(array == task_id) |>
-  select(-array)
+task_grid <- eta_grid |>
+  filter(task == task_id)
 
-y <- array_grid |>
+array_grid <- bind_cols(hyper_grid, task_grid)
+
+y <- task_grid |>
   pull(responses)
 
-testthat::expect_equal(length(unique(y)), 1)
-y <- y[1]
 message("\ny: ", y)
 
-eta <- eta_grid |>
-  filter(responses == y) |>
+eta <- task_grid |>
   pull(eta)
 message("eta: ", eta)
 message("Number of threads: ", Sys.getenv("OMP_NUM_THREADS"))
@@ -105,7 +86,8 @@ Y <- train_data |> pull(y)
 
 objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
 
-fit_xgBoost <- function(eta, X, Y, objective, params, omp_thread = Sys.getenv("OMP_NUM_THREADS")){
+fit_xgBoost <- function(i, X, Y, objective, array_grid, omp_thread = Sys.getenv("OMP_NUM_THREADS")){
+
   set.seed(123)
   xgb.cv(
     data = X,
@@ -117,7 +99,16 @@ fit_xgBoost <- function(eta, X, Y, objective, params, omp_thread = Sys.getenv("O
     nfold = 10,
     nthread = as.numeric(omp_thread),
     verbose = 0,
-    params = params
+    params = list(
+      eta = array_grid$eta[i],
+      max_depth = array_grid$max_depth[i],
+      min_child_weight = array_grid$min_child_weight[i],
+      subsample = array_grid$subsample[i],
+      colsample_bytree = array_grid$colsample_bytree[i],
+      gamma = array_grid$gamma[i],
+      lambda = array_grid$lambda[i],
+      alpha = array_grid$alpha[i]
+    )
   )
 }
 
@@ -125,23 +116,15 @@ fit_xgBoost <- function(eta, X, Y, objective, params, omp_thread = Sys.getenv("O
 message("Begin grid search...")
 for(i in seq_len(nrow(array_grid))) {
 
-  params = list(
-    eta = eta,
-    max_depth = array_grid$max_depth[i],
-    min_child_weight = array_grid$min_child_weight[i],
-    subsample = array_grid$subsample[i],
-    colsample_bytree = array_grid$colsample_bytree[i],
-    gamma = array_grid$gamma[i],
-    lambda = array_grid$lambda[i],
-    alpha = array_grid$alpha[i]
-  )
-
   model_time <- Sys.time()
   m <- fit_xgBoost(eta, X, Y, objective, params)
   total_time <- Sys.time() - model_time
 
-  per <- round(i / nrow(array_grid) * 100, 1)
-  message("[", i, "/", nrow(array_grid), "] ", per, "% ", total_time)
+  if(i == 1 | i %% 20 == 0){
+    per <- round(i / nrow(array_grid) * 100, 1)
+    message("[", i, "/", nrow(array_grid), "] ", per, "% ")
+    print(round(total_time, 2))
+  }
 
   array_grid$rmse[i] <- min(m$evaluation_log$test_rmse_mean)
   array_grid$trees[i] <- m$best_iteration
