@@ -125,11 +125,15 @@ fit_xgBoost <- function(i, array_grid){
   out_grid
 }
 
-all_out <- tibble()
 message("Begin grid search...")
 for(j in seq_len(n_loops)){
 
   model_time <- Sys.time()
+
+  path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
+  filename <- file.path(path, paste0(j, "_", y, "_xgbTree.rds"))
+
+  if(file.exists(filename)) next
 
   cl <- makeCluster(n_models_per_loop)
   registerDoParallel(cl)
@@ -141,11 +145,15 @@ for(j in seq_len(n_loops)){
     .inorder = FALSE,
     .packages = c("xgboost")
     ) %dopar%
-    fit_xgBoost(i, J)
+    fit_xgBoost(i, J) |>
+    suppressMessages() |>
+    suppressWarnings() |>
+    as_tibble()
 
   stopCluster(cl)
 
-  all_out <- bind_rows(all_out, as_tibble(out))
+  write_rds(out, filename)
+
   total_time <- Sys.time() - model_time
   message("\n[", j, "/", n_loops, "]")
   print(round(total_time, 2))
@@ -153,6 +161,11 @@ for(j in seq_len(n_loops)){
 }
 
 message("Grid seach complete!")
+
+out_files <- list.files(path)
+all_out <- out_files |>
+  purrr::map_dfr(readRDS) |>
+  distinct()
 
 out <- all_out |>
   as_tibble() |>
