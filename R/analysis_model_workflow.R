@@ -75,7 +75,7 @@ message("eta: ", eta)
 
 array_grid <- bind_cols(hyper_grid, task_grid)
 
-total_cores <- 96
+total_cores <- 48
 n_threads <- 2
 n_models_per_loop <- total_cores / n_threads
 n_loops <- nrow(array_grid) / n_models_per_loop
@@ -94,7 +94,7 @@ Y <- train_data |> pull(y)
 
 objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
 
-fit_xgBoost <- function(i, array_grid){
+fit_xgBoost <- function(i, array_grid, n_threads){
 
   set.seed(123)
   out_grid <- array_grid[i,]
@@ -106,7 +106,7 @@ fit_xgBoost <- function(i, array_grid){
     metrics = "rmse",
     early_stopping_rounds = 50,
     nfold = 10,
-    nthread = 2,
+    nthread = n_threads,
     verbose = 0,
     params = list(
       eta = array_grid$eta[i],
@@ -145,7 +145,7 @@ for(j in seq_len(n_loops)){
     .inorder = FALSE,
     .packages = c("xgboost")
     ) %dopar%
-    fit_xgBoost(i, J) |>
+    fit_xgBoost(i, J, n_threads) |>
     suppressMessages() |>
     suppressWarnings() |>
     as_tibble()
