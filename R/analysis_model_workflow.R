@@ -75,7 +75,7 @@ message("eta: ", eta)
 
 array_grid <- bind_cols(hyper_grid, task_grid)
 
-total_cores <- 48
+total_cores <- 96
 n_threads <- 2
 n_models_per_loop <- total_cores / n_threads
 n_loops <- nrow(array_grid) / n_models_per_loop
