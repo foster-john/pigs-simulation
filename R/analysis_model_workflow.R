@@ -3,6 +3,9 @@
 
 start_time <- Sys.time()
 
+Sys.setenv(RENV_CONFIG_SANDBOX_ENABLED = FALSE)
+renv::load("/home/john.foster/pigs-simulation/")
+
 library(plyr)
 library(dplyr)
 library(tidyr)
