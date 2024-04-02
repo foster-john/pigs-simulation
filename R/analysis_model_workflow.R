@@ -146,8 +146,7 @@ for(j in seq_len(n_loops)){
     .packages = c("xgboost")
     ) %dopar%
     fit_xgBoost(i, J, n_threads) |>
-    suppressMessages() |>
-    suppressWarnings() |>
+    suppressPackageStartupMessages() |>
     as_tibble()
 
   stopCluster(cl)
