@@ -7,40 +7,51 @@ library(rsample)
 library(xgboost)
 source("R/functions_analysis.R")
 
-args <- commandArgs(trailingOnly = TRUE)
-task_id <- as.numeric(args[1])
-message("task id: ", task_id)
+# args <- commandArgs(trailingOnly = TRUE)
+# task_id <- as.numeric(args[1])
+# message("task id: ", task_id)
+
+task_id = 4
 
 analysis_dir <- "analysis"
 model_dir <- "MLs"
 path <- file.path(analysis_dir, model_dir)
 
-config_name <- "hpc_production"
-config <- config::get(config = config_name)
-top_dir <- config$top_dir
-analysis_dir <- config$analysis_dir
-dev_dir <- config$dev_dir
-model_dir <- "gradientBoosting"
-project_dir <- config$project_dir
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+# config_name <- "hpc_production"
+# config <- config::get(config = config_name)
+# top_dir <- config$top_dir
+# analysis_dir <- config$analysis_dir
+# dev_dir <- config$dev_dir
+# model_dir <- "gradientBoosting"
+# project_dir <- config$project_dir
+# path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+#
+# all_results <- tibble()
+# for(i in seq_along(tree)){
+#   xx <- read_rds(file.path(path, tree[i]))
+#   all_results <- bind_rows(all_results, xx)
+# }
 
 hyper_grid <- read_rds(file.path(path, "xgTreeResults.rds"))
 
 best_model <- hyper_grid |>
   group_by(responses) |>
   filter(rmse == min(rmse)) |>
+  filter(min_child_weight == min(min_child_weight)) |>
   ungroup()
 
-# model_dir <- "betaSurvival_uniqueAreaTrapSnare"
-# path <- file.path(analysis_dir, model_dir)
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, config$model_dir)
+model_dir <- "betaSurvival_uniqueAreaTrapSnare"
+path <- file.path(analysis_dir, model_dir)
+# path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, config$model_dir)
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
-  filter(density > 0)
+  filter(density > 0) |>
+  mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
+  rename(mbias_density_reg = mbias_density)
 
-responses <- c("nm_rmse_density", "mpe_density", "mbias_density")
+responses <- best_model$responses
 
-train_best_pred <- function(data, y){
+train_best_pred <- function(data, y, best_model){
   df_model <- subset_rename(data, y)
 
   split_train <- df_model$train
@@ -69,13 +80,15 @@ train_best_pred <- function(data, y){
     as.matrix()
   Y <- train |> pull(y)
 
+  objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
+
   # train final model
   fit <- xgboost(
     params = params,
     data = X,
     label = Y,
     nrounds = pull(tune_grid, trees),
-    objective = "reg:squarederror",
+    objective = objective,
     verbose = 0
   )
 
@@ -96,6 +109,7 @@ train_best_pred <- function(data, y){
     list(
       fit = fit,
       train = X,
+      Y = Y,
       test = test,
       rmse = rmse,
       r2 = r2,
@@ -107,13 +121,13 @@ train_best_pred <- function(data, y){
 
 partial_dependence <- function(col, train_dat, fit){
 
-  require(doParallel)
-  cl <- makeCluster(4) # use 4 workers
-  registerDoParallel(cl) # register the parallel backend
+  # require(doParallel)
+  # cl <- makeCluster(4) # use 4 workers
+  # registerDoParallel(cl) # register the parallel backend
 
-  df <- pdp::partial(fit, col, train = train_dat, plot = FALSE, parallel = TRUE)
+  df <- pdp::partial(fit, col, train = train_dat, plot = FALSE, parallel = FALSE)
 
-  stopCluster(cl)
+  # stopCluster(cl)
 
   as_tibble(df)
 
@@ -122,24 +136,22 @@ partial_dependence <- function(col, train_dat, fit){
 ylab <- responses[task_id]
 message("Response: ", ylab)
 
-best_pred <- train_best_pred(data, ylab)
+best_pred <- train_best_pred(data, ylab, best_model)
 best_pred$vi
 
 df_test <- best_pred$test
 df_train <- best_pred$train
 fit <- best_pred$fit
 
-if(task_id <= 2){
-  col <- c("sum_take", "sum_take_d", "property_area")
-  cols <- expand_grid(col1 = col, col2 = col)
-} else {
-  col <- c("sum_take", "sum_take_d", "property_area", "sum_effort",
-           "mean_effort", "sum_effort_per_unit", "mean_effort_per_unit")
-  cols <- expand_grid(col1 = col, col2 = col)
-}
 
-cols <- cols |>
-  filter(col1 != col2)
+
+if(task_id == 1) col <- c("sum_take", "property_area", "sum_take_d", "c_road_den", "c_rugged", "c_canopy")
+if(task_id == 2) col <- c("c_canopy", "c_rugged", "property_area", "c_road_den", "sum_take",
+                          "sum_take_d", "mean_effort", "mean_effort_per_unit", "sum_effort",
+                          "mean_unit_count", "sum_effort_per_unit", "sum_unit_count", "delta",
+                          "n_reps_pp")
+if(task_id == 3) col <- c("property_area", "c_road_den", "c_rugged", "c_canopy")
+if(task_id == 4) col <- c("sum_take", "sum_take_d")
 
 message("Single dependence...")
 single_dependence <- list()
@@ -151,27 +163,18 @@ for(i in seq_along(col)){
 }
 close(pb)
 
-message("Pair dependence...")
-pair_dependence <- list()
-pb <- txtProgressBar(max = nrow(cols), style = 1)
-for(i in seq_len(nrow(cols))){
-  x <- cols |>
-    dplyr::slice(i) |>
-    as_vector()
-  pdp_d <- partial_dependence(x, df_train, fit)
-  pair_dependence[[i]] <- pdp_d
-  setTxtProgressBar(pb, i)
-}
-close(pb)
+
 
 out <- list(
   pred = best_pred,
-  single_dependence = single_dependence,
-  pair_dependence = pair_dependence
+  single_dependence = single_dependence
 )
 
 message("Write rds")
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+# path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
+analysis_dir <- "analysis"
+model_dir <- "MLs"
+path <- file.path(analysis_dir, model_dir)
 dest <- file.path(path, paste0(ylab, "_xgBoostAnalysis.rds"))
 write_rds(out, dest)
 
