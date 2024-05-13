@@ -149,7 +149,7 @@ for(j in seq_len(n_loops)){
   registerDoParallel(cl)
 
   out <- foreach::foreach(
-    i = 1:n_models_per_loop,
+    i = 1:nrow(J),
     .combine = rbind,
     .inorder = FALSE,
     .packages = c("xgboost")
