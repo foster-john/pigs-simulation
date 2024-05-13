@@ -33,24 +33,29 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
-  filter(density > 0) |>
+  filter(med_density > 0) |>
   mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
   rename(mbias_density_reg = mbias_density)
 
-responses <- c("nm_rmse_density", "mpe_density", "mbias_density_reg", "mbias_density_class")
+responses <- c("nm_rmse_density",
+               "mpe_density",
+               "mbias_density_reg",
+               "mbias_density_class",
+               "med_density",
+               "var_density")
 
 eta_grid <- tibble(
   responses = responses,
-  eta = c(0.1, 0.1, 0.3, 0.1),
+  eta = 0.1,
   task = 1:length(responses)
 )
 
 # hyperparameter grid
 hyper_grid <- expand_grid(
   max_depth = 3:8,
-  min_child_weight = c(0.5, 1),
-  subsample = c(0.5, 1),
-  colsample_bytree = c(0.5, 1),
+  min_child_weight = 0.5,
+  subsample = 0.5,
+  colsample_bytree = 0.5,
   gamma = c(0, 1, 10, 100, 1000),
   lambda = c(0, 1e-2, 0.1, 1, 100, 1000),
   alpha = c(0, 1e-2, 0.1, 1, 100, 1000),
@@ -60,7 +65,7 @@ hyper_grid <- expand_grid(
 
 args <- commandArgs(trailingOnly = TRUE)
 task_id <- as.numeric(args[1])
-if(is.na(task_id)) task_id <- 1
+if(is.na(task_id)) task_id <- 5
 message("task id: ", task_id)
 
 task_grid <- eta_grid |>
@@ -81,10 +86,10 @@ array_grid <- bind_cols(hyper_grid, task_grid)
 total_cores <- 96
 n_threads <- 2
 n_models_per_loop <- total_cores / n_threads
-n_loops <- nrow(array_grid) / n_models_per_loop
+n_loops <- ceiling(nrow(array_grid) / n_models_per_loop)
 
 array_grid <- array_grid |>
-  mutate(task = rep(1:n_loops, each = n_models_per_loop))
+  mutate(task = rep(1:n_loops, each = n_models_per_loop)[1:nrow(array_grid)])
 
 df_model <- subset_rename(data, y)
 baked_data <- my_recipe(df_model$train, df_model$test)
