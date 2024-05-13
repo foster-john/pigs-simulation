@@ -143,10 +143,11 @@ for(j in seq_len(n_loops)){
 
   if(file.exists(filename)) next
 
-  cl <- makeCluster(n_models_per_loop)
+  J <- array_grid |> filter(task == j)
+
+  cl <- makeCluster(nrow(J))
   registerDoParallel(cl)
 
-  J <- array_grid |> filter(task == j)
   out <- foreach::foreach(
     i = 1:n_models_per_loop,
     .combine = rbind,
