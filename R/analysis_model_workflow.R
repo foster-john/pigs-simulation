@@ -133,12 +133,13 @@ fit_xgBoost <- function(i, array_grid, n_threads){
   out_grid
 }
 
+path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
+
 message("Begin grid search...")
 for(j in seq_len(n_loops)){
 
   model_time <- Sys.time()
 
-  path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
   filename <- file.path(path, paste0(j, "_", y, "_xgbTree.rds"))
 
   if(file.exists(filename)) next
@@ -170,7 +171,7 @@ for(j in seq_len(n_loops)){
 
 message("Grid seach complete!")
 
-out_files <- list.files(path)
+out_files <- file.path(path, list.files(path))
 all_out <- out_files |>
   purrr::map_dfr(readRDS) |>
   distinct()
@@ -182,7 +183,6 @@ out <- all_out |>
 message("All fits")
 print(out)
 
-path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, "gradientBoosting")
 filename <- file.path(path, paste0("xgbTree_", y, ".rds"))
 write_rds(out, filename)
 
