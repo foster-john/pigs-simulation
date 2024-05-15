@@ -33,7 +33,8 @@ path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
-  filter(med_density > 0) |>
+  filter(med_density > 0,
+         var_density > 0) |>
   mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
   rename(mbias_density_reg = mbias_density)
 
@@ -91,8 +92,10 @@ n_loops <- ceiling(nrow(array_grid) / n_models_per_loop)
 array_grid <- array_grid |>
   mutate(task = rep(1:n_loops, each = n_models_per_loop)[1:nrow(array_grid)])
 
-df_model <- subset_rename(data, y)
-baked_data <- my_recipe(df_model$train, df_model$test)
+df_model <- subset_rename(data, y, 1100)
+
+baked_data <- my_recipe(df_model$train |> select(-PPNum, -property, -property_id, -simulation_id),
+                        df_model$test |> select(-PPNum, -property, -property_id, -simulation_id))
 
 train_data <- baked_data$df_train
 X <- train_data |>

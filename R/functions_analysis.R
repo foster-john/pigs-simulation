@@ -19,44 +19,34 @@ my_recipe <- function(df_train, df_test){
 
 }
 
-subset_rename <- function(df, y, prop = 0.8){
+subset_rename <- function(df, y, n_sample = 500){
 
   require(dplyr)
   require(rsample)
-  set.seed(456)
+  set.seed(5)
 
   dat <- df |>
     ungroup() |>
     mutate(simulation_id = stringr::str_extract(property_id, "[[:graph:]]*(?=-[[:digit:]]*$)"),
+           simulation_id = as.numeric(as.factor(simulation_id)),
            methods_used = as.factor(methods_used)) |>
     rename(y = all_of(y),
            sum_take_d = sum_take_density) |>
     group_by(property_id) |>
     mutate(delta = c(NA, diff(PPNum))) |>
     ungroup() |>
-    select(-contains("density"), -contains("abundance"), -PPNum, -property,
+    select(-contains("density"), -contains("abundance"),
            -extinct, -recovered, -obs_flag)
 
   if(y %in% c("nm_rmse_density", "mpe_density", "med_density", "var_density")){
     dat <- dat |> mutate(y = log(y))
   }
 
-  simulations <- dat |> pull(simulation_id) |> unique()
-
-  n_simulations <- length(simulations)
-  n_training <- floor(n_simulations * prop)
-
-  samps <- sample.int(n_simulations, n_training)
-  training_simulations <- simulations[samps]
-
-  train <- dat |>
-    filter(simulation_id %in% training_simulations) |>
-    select(-simulation_id)
-
   # create strata by decile
   # each property will belong to a decile of each land cover variable
   df_strata <- dat |>
-    mutate(canopy_strata = make_strata(c_canopy, breaks = 10),
+    mutate(simulation_strata = make_strata(simulation_id, breaks = 10),
+           canopy_strata = make_strata(c_canopy, breaks = 10),
            rugged_strata = make_strata(c_rugged, breaks = 10),
            road_den_strata = make_strata(c_road_den, breaks = 10)) |>
     select(property_id, contains("strata")) |>
@@ -70,19 +60,22 @@ subset_rename <- function(df, y, prop = 0.8){
 
     dfs |>
       group_by(.data[[col]]) |>
-      slice_sample(n = min(min_sample, 15)) |>
+      slice_sample(n = min(min_sample, n_sample)) |>
       ungroup() |>
       pull(property_id)
   }
 
+  simulation_sample <- col_sample(df_strata, "simulation_strata")
   canopy_sample <- col_sample(df_strata, "canopy_strata")
   rugged_sample <- col_sample(df_strata, "rugged_strata")
   road_den_sample <- col_sample(df_strata, "road_den_strata")
 
-  props <- c(canopy_sample, rugged_sample, road_den_sample)
+  props <- c(simulation_sample, canopy_sample, rugged_sample, road_den_sample)
   df_sample <- df_strata |>
     filter(property_id %in% unique(props))
 
+  message("Number of properties in each simulation strata:")
+  print(table(df_sample$simulation_strata))
   message("Number of properties in each canopy strata:")
   print(table(df_sample$canopy_strata))
   message("Number of properties in each rugged strata:")
@@ -93,22 +86,14 @@ subset_rename <- function(df, y, prop = 0.8){
   train <- dat |>
     filter(property_id %in% props)
 
-  training_simulations <- unique(train$simulation_id)
-
   test <- dat |>
-    filter(!property_id %in% props,
-           !simulation_id %in% training_simulations)
+    filter(!property_id %in% props)
 
-  testing_simulations <- unique(test$simulation_id)
+  test_per <- round(nrow(test) / nrow(dat), 2)
+  train_per <- round(nrow(train) / nrow(dat), 2)
+  message(test_per, " / ", train_per, " [test / train]")
 
-  message("Number of simulations in training data: ", length(training_simulations))
-  message("Number of simulations in testing data: ", length(testing_simulations))
-
-  total_simulations <- length(unique(dat$simulation_id))
-  testthat::expect_equal(total_simulations,
-                         length(training_simulations) + length(testing_simulations))
-
-  list(train = train |> select(-simulation_id, -property_id),
-       test = test |> select(-simulation_id, -property_id))
+  list(train = train,
+       test = test)
 
 }
