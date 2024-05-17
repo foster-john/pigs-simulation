@@ -35,8 +35,8 @@ data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   group_by(property_id) |>
   mutate(delta = c(NA, diff(PPNum))) |>
   ungroup() |>
-  filter(med_density > 0,
-         var_density > 0) |>
+  # filter(med_density > 0,
+  #        var_density > 0) |>
   mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
   rename(mbias_density_reg = mbias_density)
 
@@ -106,6 +106,7 @@ X <- train_data |>
 Y <- train_data |> pull(y)
 
 objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
+objective <- "reg:tweedie"
 
 fit_xgBoost <- function(i, array_grid, n_threads){
 
@@ -188,7 +189,7 @@ out <- all_out |>
 message("All fits")
 print(out)
 
-filename <- file.path(path, paste0("xgbTree_", y, ".rds"))
+filename <- file.path(path, paste0("xgbTree_tweedie_", y, ".rds"))
 write_rds(out, filename)
 
 message("=== DONE ===\n\n")
