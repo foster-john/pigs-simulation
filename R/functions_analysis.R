@@ -32,9 +32,6 @@ subset_rename <- function(df, y, n_sample = 500){
            methods_used = as.factor(methods_used)) |>
     rename(y = all_of(y),
            sum_take_d = sum_take_density) |>
-    group_by(property_id) |>
-    mutate(delta = c(NA, diff(PPNum))) |>
-    ungroup() |>
     select(-contains("density"), -contains("abundance"),
            -extinct, -recovered, -obs_flag)
 

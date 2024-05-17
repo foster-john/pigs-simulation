@@ -32,6 +32,8 @@ project_dir <- config$project_dir
 path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
 
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
+  group_by(property_id) |>
+  mutate(delta = c(NA, diff(PPNum))) |>
   ungroup() |>
   filter(med_density > 0,
          var_density > 0) |>
