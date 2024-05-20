@@ -7,34 +7,13 @@ library(rsample)
 library(xgboost)
 source("R/functions_analysis.R")
 
-# args <- commandArgs(trailingOnly = TRUE)
-# task_id <- as.numeric(args[1])
-# message("task id: ", task_id)
-
-task_id = 4
-
+ylab <- "med_density"
+message("Response: ", ylab)
 analysis_dir <- "analysis"
 model_dir <- "MLs"
 path <- file.path(analysis_dir, model_dir)
 
-# config_name <- "hpc_production"
-# config <- config::get(config = config_name)
-# top_dir <- config$top_dir
-# analysis_dir <- config$analysis_dir
-# dev_dir <- config$dev_dir
-# model_dir <- "gradientBoosting"
-# project_dir <- config$project_dir
-# path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, model_dir)
-#
-# all_results <- tibble()
-# for(i in seq_along(tree)){
-#   xx <- read_rds(file.path(path, tree[i]))
-#   all_results <- bind_rows(all_results, xx)
-# }
-
-hyper_grid <- read_rds(file.path(path, "xgTreeResults.rds"))
-
-best_model <- hyper_grid |>
+best_model <- read_rds(file.path(path, "xgbTree_med_density.rds")) |>
   group_by(responses) |>
   filter(rmse == min(rmse)) |>
   filter(min_child_weight == min(min_child_weight)) |>
@@ -45,19 +24,32 @@ path <- file.path(analysis_dir, model_dir)
 # path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, config$model_dir)
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
   ungroup() |>
-  filter(density > 0) |>
+  mutate(ppID = paste0(property_id, "-", PPNum),
+         methods_used = as.character(methods_used))
+
+data_ml <- data |>
+  filter(med_density > 0) |>
+  filter(var_density > 0) |>
   mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
   rename(mbias_density_reg = mbias_density)
 
-responses <- best_model$responses
+df_model <- subset_rename(data_ml, ylab, 1100)
+train_ids <- unique(df_model$train$ppID)
 
-train_best_pred <- function(data, y, best_model){
-  df_model <- subset_rename(data, y)
+split_train <- df_model$train |> select(-PPNum, -property, -property_id, -simulation_id, -ppID)
+split_test <- data |>
+  rename(y = all_of(ylab),
+         sum_take_d = sum_take_density) |>
+  group_by(property_id) |>
+  mutate(delta = c(NA, diff(PPNum))) |>
+  ungroup() |>
+  select(all_of(colnames(split_train)))
 
-  split_train <- df_model$train
-  split_test <- df_model$test
+# predict to all data not in training set!
 
-  baked_data <- my_recipe(split_train, split_test)
+train_best_pred <- function(data_train, data_test, y, best_model){
+
+  baked_data <- my_recipe(data_train, data_test)
   train <- baked_data$df_train
   test <- baked_data$df_test
 
@@ -121,41 +113,22 @@ train_best_pred <- function(data, y, best_model){
 
 partial_dependence <- function(col, train_dat, fit){
 
-  # require(doParallel)
-  # cl <- makeCluster(4) # use 4 workers
-  # registerDoParallel(cl) # register the parallel backend
-
   df <- pdp::partial(fit, col, train = train_dat, plot = FALSE, parallel = FALSE)
-
-  # stopCluster(cl)
-
   as_tibble(df)
 
 }
 
-ylab <- responses[task_id]
-message("Response: ", ylab)
-
-best_pred <- train_best_pred(data, ylab, best_model)
+best_pred <- train_best_pred(split_train, split_test, ylab, best_model)
 best_pred$vi
 
 df_test <- best_pred$test
 df_train <- best_pred$train
 fit <- best_pred$fit
 
-
-
-if(task_id == 1) col <- c("sum_take", "property_area", "sum_take_d", "c_road_den", "c_rugged", "c_canopy")
-if(task_id == 2) col <- c("c_canopy", "c_rugged", "property_area", "c_road_den", "sum_take",
-                          "sum_take_d", "mean_effort", "mean_effort_per_unit", "sum_effort",
-                          "mean_unit_count", "sum_effort_per_unit", "sum_unit_count", "delta",
-                          "n_reps_pp")
-if(task_id == 3) col <- c("property_area", "c_road_den", "c_rugged", "c_canopy")
-if(task_id == 4) col <- c("sum_take", "sum_take_d")
-
 message("Single dependence...")
+col <- best_pred$vi$Feature[best_pred$vi$gainRelative >= 0.1]
 single_dependence <- list()
-pb <- txtProgressBar(max = length(col), style = 1)
+pb <- txtProgressBar(max = length(col), style = 3)
 for(i in seq_along(col)){
   pdp_s <- partial_dependence(col[i], df_train, fit)
   single_dependence[[col[i]]] <- pdp_s
@@ -163,11 +136,10 @@ for(i in seq_along(col)){
 }
 close(pb)
 
-
-
 out <- list(
   pred = best_pred,
-  single_dependence = single_dependence
+  single_dependence = single_dependence,
+  train_ids = train_ids
 )
 
 message("Write rds")
