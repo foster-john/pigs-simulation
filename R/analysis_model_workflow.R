@@ -146,7 +146,7 @@ for(j in seq_len(n_loops)){
 
   model_time <- Sys.time()
 
-  filename <- file.path(path, paste0(j, "_", y, "_xgbTree.rds"))
+  filename <- file.path(path, paste0(j, "_", y, "_xgbTree_tweedie.rds"))
 
   if(file.exists(filename)) next
 
