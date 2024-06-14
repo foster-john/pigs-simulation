@@ -49,6 +49,22 @@ message("\ndata model summaries done\n")
 rm(list = c("all_theta", "all_area", "all_p", "data_model_summaries"))
 gc()
 
+all_param_samples <- all_samples |>
+  select(
+    simulation,
+    start_density,
+    contains("beta1"),
+    contains("beta_p"),
+    contains("log_gamma["),
+    contains("log_rho["),
+    contains("p_mu["),
+    contains("log_nu["),
+    contains("phi_mu"),
+    contains("psi_phi")
+  )
+
+write_rds(all_param_samples, file.path(path, "all_param_samples.rds"))
+
 recovery_list <- list()
 residual_list <- list()
 
