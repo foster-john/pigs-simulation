@@ -64,6 +64,7 @@ all_param_samples <- all_samples |>
   )
 
 write_rds(all_param_samples, file.path(path, "all_param_samples.rds"))
+write_rds(all_beta_p, file.path(path, "all_beta_p.rds"))
 
 recovery_list <- list()
 residual_list <- list()
