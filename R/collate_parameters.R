@@ -58,7 +58,7 @@ all_param_samples <- all_samples |>
     contains("log_gamma["),
     contains("log_rho["),
     contains("p_mu["),
-    contains("log_nu["),
+    contains("log_nu"),
     contains("phi_mu"),
     contains("psi_phi")
   )
