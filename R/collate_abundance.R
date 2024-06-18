@@ -47,14 +47,14 @@ n_attributes <- xn |>
 abundance_summaries <- xn |>
   select(simulation, property, PPNum, all_of(vals)) |>
   group_by(simulation, property, PPNum) |>
-  summarise(low_abundance = quantile(value, 0.025),
+  summarise(low_abundance = quantile(value, 0.05),
             med_abundance = quantile(value, 0.5),
-            high_abundance = quantile(value, 0.975),
+            high_abundance = quantile(value, 0.95),
             var_abundance = var(value),
             cv_abundance = sd(value) / mean(value),
-            low_density = quantile(estimated_density, 0.025),
+            low_density = quantile(estimated_density, 0.05),
             med_density = quantile(estimated_density, 0.5),
-            high_density = quantile(estimated_density, 0.975),
+            high_density = quantile(estimated_density, 0.95),
             var_density = var(estimated_density),
             cv_density = sd(estimated_density) / mean(estimated_density)) |>
   ungroup() |>
