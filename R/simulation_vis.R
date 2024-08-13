@@ -9,10 +9,7 @@ library(lme4)
 analysis_dir <- "analysis"
 model_dir <- "betaSurvival_uniqueAreaTrapSnare"
 path <- file.path(analysis_dir, model_dir)
-density_dirs <- list.files(path)
-
-
-density_dirs <- grep("density_", density_dirs, value = TRUE)
+density_dirs <- paste0("density_", c(0.3, 1.475, 2.65, 3.825, 5))
 
 map_files2 <- function(dirs_vec, file_name){
 
