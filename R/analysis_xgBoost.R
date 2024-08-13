@@ -7,13 +7,13 @@ library(rsample)
 library(xgboost)
 source("R/functions_analysis.R")
 
-ylab <- "med_density"
+ylab <- "var_density"
 message("Response: ", ylab)
 analysis_dir <- "analysis"
 model_dir <- "MLs"
 path <- file.path(analysis_dir, model_dir)
 
-best_model <- read_rds(file.path(path, "xgbTree_med_density.rds")) |>
+best_model <- read_rds(file.path(path, paste0("xgbTree_", ylab, ".rds"))) |>
   group_by(responses) |>
   filter(rmse == min(rmse)) |>
   filter(min_child_weight == min(min_child_weight)) |>
@@ -23,27 +23,24 @@ model_dir <- "betaSurvival_uniqueAreaTrapSnare"
 path <- file.path(analysis_dir, model_dir)
 # path <- file.path(top_dir, project_dir, analysis_dir, dev_dir, config$model_dir)
 data <- read_rds(file.path(path, "abundanceScoresByPrimaryPeriod.rds")) |>
-  ungroup() |>
-  mutate(ppID = paste0(property_id, "-", PPNum),
-         methods_used = as.character(methods_used))
-
-data_ml <- data |>
-  filter(med_density > 0) |>
-  filter(var_density > 0) |>
-  mutate(mbias_density_class = as.numeric(mbias_density > 0)) |>
-  rename(mbias_density_reg = mbias_density)
-
-df_model <- subset_rename(data_ml, ylab, 1100)
-train_ids <- unique(df_model$train$ppID)
-
-split_train <- df_model$train |> select(-PPNum, -property, -property_id, -simulation_id, -ppID)
-split_test <- data |>
-  rename(y = all_of(ylab),
-         sum_take_d = sum_take_density) |>
   group_by(property_id) |>
   mutate(delta = c(NA, diff(PPNum))) |>
   ungroup() |>
-  select(all_of(colnames(split_train)))
+  filter(med_density > 0) |>
+  filter(var_density > 0)
+
+df_model <- subset_rename(data, ylab, 1100)
+
+split_train <- df_model$train |> select(-PPNum, -property, -property_id, -simulation_id)
+split_test <- df_model$test |> select(-PPNum, -property, -property_id, -simulation_id)
+
+# split_test <- data |>
+#   rename(y = all_of(ylab),
+#          sum_take_d = sum_take_density) |>
+#   group_by(property_id) |>
+#   mutate(delta = c(NA, diff(PPNum))) |>
+#   ungroup() |>
+#   select(all_of(colnames(split_train)))
 
 # predict to all data not in training set!
 
@@ -73,6 +70,7 @@ train_best_pred <- function(data_train, data_test, y, best_model){
   Y <- train |> pull(y)
 
   objective <- if_else(y == "mbias_density_class", "binary:logistic", "reg:squarederror")
+  # objective <- "reg:tweedie"
 
   # train final model
   fit <- xgboost(
@@ -138,8 +136,7 @@ close(pb)
 
 out <- list(
   pred = best_pred,
-  single_dependence = single_dependence,
-  train_ids = train_ids
+  single_dependence = single_dependence
 )
 
 message("Write rds")
