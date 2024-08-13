@@ -35,9 +35,9 @@ subset_rename <- function(df, y, n_sample = 500){
     select(-contains("density"), -contains("abundance"),
            -extinct, -recovered, -obs_flag)
 
-  # if(y %in% c("nm_rmse_density", "mpe_density", "med_density", "var_density")){
-  #   dat <- dat |> mutate(y = log(y))
-  # }
+  if(y %in% c("nm_rmse_density", "mpe_density", "med_density", "var_density")){
+    dat <- dat |> mutate(y = log(y))
+  }
 
   # create strata by decile
   # each property will belong to a decile of each land cover variable
