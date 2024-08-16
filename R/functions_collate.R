@@ -202,11 +202,11 @@ recovered <- function(df){
 
 my_summary <- function(df){
   df |>
-    summarise(low = quantile(value, 0.025),
+    summarise(low = quantile(value, 0.05),
               q1 = quantile(value, 0.25),
               med = quantile(value, 0.5),
               q3 = quantile(value, 0.75),
-              high = quantile(value, 0.975),
+              high = quantile(value, 0.95),
               mu = mean(value),
               sd = sd(value))
 }
