@@ -88,7 +88,7 @@ sum_take <- all_take |>
   distinct()
 
 density_obs <- density |>
-  filter(obs_flag == 1) |>
+  # filter(obs_flag == 1) |>
   left_join(sum_take) |>
   mutate(sum_take_density = sum_take / property_area) |>
   group_by(property_id) |>
