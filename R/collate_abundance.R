@@ -105,7 +105,7 @@ error_by_property <- xn |>
             nm_rmse_abundance = rmse_abundance / mean(abundance),
             nm_rmse_density = rmse_density / mean(density),
             nr_rmse_abundance = rmse_abundance / (max(abundance) - min(abundance)),
-            nr_rmse_density = rmse_density / (max(density) - min(adensity))) |>
+            nr_rmse_density = rmse_density / (max(density) - min(density))) |>
   ungroup() |>
   arrange(simulation, property) |>
   left_join(n_attributes)
@@ -133,7 +133,7 @@ error_by_simulation <- xn |>
             ns_rmse_abundance = rmse_abundance / sd(abundance),
             ns_rmse_density = rmse_density / sd(density),
             nr_rmse_abundance = rmse_abundance / (max(abundance) - min(abundance)),
-            nr_rmse_density = rmse_density / (max(density) - min(adensity)),
+            nr_rmse_density = rmse_density / (max(density) - min(density)),
             sd_ratio_abundance = sd(value) / sd(abundance),
             sd_ratio_density = sd(estimated_density) / sd(density)) |>
   ungroup()
