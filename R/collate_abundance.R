@@ -70,6 +70,8 @@ error_by_observation <- xn |>
   group_by(simulation, property, PPNum) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mae_abundance = mean(abs(value - abundance)),
+            mae_density = mean(abs(estimated_density - density)),
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
             rmse_abundance = sqrt(mean((value - abundance)^2)),
@@ -92,6 +94,8 @@ error_by_property <- xn |>
   group_by(simulation, property) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mae_abundance = mean(abs(value - abundance)),
+            mae_density = mean(abs(estimated_density - density)),
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
             rmse_abundance = sqrt(mean((value - abundance)^2)),
@@ -99,7 +103,9 @@ error_by_property <- xn |>
             rmsle_abundance = sqrt(mean((log(value + 1) - log(abundance + 1))^2)),
             rmsle_density = sqrt(mean((log(estimated_density + 1) - log(density + 1))^2)),
             nm_rmse_abundance = rmse_abundance / mean(abundance),
-            nm_rmse_density = rmse_density / mean(density)) |>
+            nm_rmse_density = rmse_density / mean(density),
+            nr_rmse_abundance = rmse_abundance / (max(abundance) - min(abundance)),
+            nr_rmse_density = rmse_density / (max(density) - min(adensity))) |>
   ungroup() |>
   arrange(simulation, property) |>
   left_join(n_attributes)
@@ -114,6 +120,8 @@ error_by_simulation <- xn |>
   group_by(simulation, start_density) |>
   summarise(mpe_abundance = mean(abs((value+1) - (abundance+1))/(abundance+1))*100,
             mpe_density = mean(abs((estimated_density+0.1) - (density+0.1))/(density+0.1))*100,
+            mae_abundance = mean(abs(value - abundance)),
+            mae_density = mean(abs(estimated_density - density)),
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
             rmse_abundance = sqrt(mean((value - abundance)^2)),
@@ -124,6 +132,8 @@ error_by_simulation <- xn |>
             nm_rmse_density = rmse_density / mean(density),
             ns_rmse_abundance = rmse_abundance / sd(abundance),
             ns_rmse_density = rmse_density / sd(density),
+            nr_rmse_abundance = rmse_abundance / (max(abundance) - min(abundance)),
+            nr_rmse_density = rmse_density / (max(density) - min(adensity)),
             sd_ratio_abundance = sd(value) / sd(abundance),
             sd_ratio_density = sd(estimated_density) / sd(density)) |>
   ungroup()
