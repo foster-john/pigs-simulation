@@ -74,6 +74,8 @@ error_by_observation <- xn |>
             mae_density = mean(abs(estimated_density - density)),
             mbias_abundance = mean(value - abundance),
             mbias_density = mean(estimated_density - density),
+            norm_bias_abundance = mean((value - abundance) / abundance),
+            norm_bias_density = mean((estimated_density - density) / density),
             rmse_abundance = sqrt(mean((value - abundance)^2)),
             rmse_density = sqrt(mean((estimated_density - density)^2)),
             rmsle_abundance = sqrt(mean((log(value + 1) - log(abundance + 1))^2)),
