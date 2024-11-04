@@ -53,6 +53,10 @@ for(i in 1:1){
   constants$samples <- as.matrix(samples)
   data <- rds$data
 
+  message("NIMBLE")
+  print(str(constants))
+  print(str(data))
+
   ls <- data_posteriors(samples, constants, data)
 
   N <- rds$N
@@ -63,6 +67,16 @@ for(i in 1:1){
 
   print(str(ls))
   print(str(take))
+
+
+  y_pred <- t(ls$ypred) |>
+    as_tibble() |>
+    mutate(PPNum = take$PPNum,
+           N = take$N,
+           take = take$take,
+           property = take$property)
+
+  left_join(y_pred, take)
 
 
 
