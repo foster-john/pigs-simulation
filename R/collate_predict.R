@@ -48,17 +48,7 @@ for(i in 1:1){
 
   start_density <- rds$start_density
 
-  samples <- rds$posterior_samples |>
-    select(
-      contains("beta1"),
-      contains("beta_p"),
-      contains("log_gamma["),
-      contains("log_rho["),
-      contains("p_mu["),
-      contains("log_nu"),
-      contains("phi_mu"),
-      contains("psi_phi")
-    )
+  samples <- rds$posterior_samples
 
   constants <- rds$constants
   data <- rds$data
