@@ -184,10 +184,10 @@ data_posteriors <- function(samples, constants, data){
     q <- c(0.05, 0.25, 0.5, 0.75, 0.95)
 
     list(
-      y = y_pred,
-      p = p,
-      potential_area = exp(log_potential_area),
-      theta = exp(log_theta)
+      y_pred = y_pred,
+      p_pred = p,
+      potential_area_pred = exp(log_potential_area),
+      theta_pred = exp(log_theta)
     )
 
   })
