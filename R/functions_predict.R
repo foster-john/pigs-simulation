@@ -181,11 +181,13 @@ data_posteriors <- function(samples, constants, data){
       y_pred[, i] <- rpois(length(N), N * p[,i])
     }
 
+    q <- c(0.05, 0.25, 0.5, 0.75, 0.95)
+
     list(
       y = y_pred,
-      p = t(apply(p, 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
-      potential_area = t(apply(exp(log_potential_area), 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975))),
-      theta = t(apply(exp(log_theta), 2, quantile, c(0.025, 0.25, 0.5, 0.75, 0.975)))
+      p = p,
+      potential_area = exp(log_potential_area),
+      theta = exp(log_theta)
     )
 
   })

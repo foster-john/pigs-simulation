@@ -48,8 +48,6 @@ for(i in 1:1){
 
   start_density <- rds$start_density
 
-  print(str(rds))
-
   samples <- rds$posterior_samples
   constants <- rds$constants
   constants$samples <- as.matrix(samples)
@@ -57,7 +55,16 @@ for(i in 1:1){
 
   ls <- data_posteriors(samples, constants, data)
 
-  y <- ls$y
+  N <- rds$N
+  take <- rds$take
+
+
+  message("Take")
+
+  print(str(ls))
+  print(str(take))
+
+
 
   # |>
   #   add_ids(t_id, dens)
