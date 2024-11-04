@@ -121,6 +121,7 @@ data_posteriors <- function(samples, constants, data){
     p_unique <- as.matrix(ilogit(samples[, grep("p_mu", colnames(samples))]))
     beta1 <- as.matrix(samples[, grep("beta1", colnames(samples))])
     beta_p <- as.matrix(samples[, grep("beta_p", colnames(samples))])
+    n_ens <- nrow(samples)
 
     for(i in 1:n_survey){
 
@@ -166,9 +167,11 @@ data_posteriors <- function(samples, constants, data){
       p[, first_survey] <- exp(log_theta[, first_survey])
 
       # the probability an individual is captured after the first survey
-      for(i in 1:n_not_first_survey){
-        p[, not_first_survey[i]] <- exp(log_theta[, start[not_first_survey[i]]] +
-                                           sum(log(1 - exp(log_theta[, start[not_first_survey[i]]:end[not_first_survey[i]]]))))
+      for(e in 1:n_ens){
+        for(i in 1:n_not_first_survey){
+          p[e, not_first_survey[i]] <- exp(log_theta[e, start[not_first_survey[i]]] +
+                                             sum(log(1 - exp(log_theta[e, start[not_first_survey[i]]:end[not_first_survey[i]]]))))
+        }
       }
 
     }
