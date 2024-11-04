@@ -50,8 +50,6 @@ for(i in 1:1){
 
   samples <- rds$posterior_samples |>
     select(
-      simulation,
-      start_density,
       contains("beta1"),
       contains("beta_p"),
       contains("log_gamma["),
