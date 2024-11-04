@@ -28,7 +28,7 @@ for(i in 1:1){
 
   task_id <- density_tasks[i]
 
-  rds_file <- file.path(path, task_id, "simulation_data.rds")
+  rds_file <- file.path(read_path, task_id, "simulation_data.rds")
 
   if(file.exists(rds_file)){
     rds <- read_rds(rds_file)
