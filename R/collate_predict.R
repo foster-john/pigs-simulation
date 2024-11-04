@@ -45,15 +45,19 @@ for(i in 1:1){
   bad_mcmc <- rds$bad_mcmc | any(psrf$`Upper C.I.` > 1.1)
 
   if(bad_mcmc) next
- 
+
   start_density <- rds$start_density
+
+  print(str(rds))
 
   samples <- rds$posterior_samples
   constants <- rds$constants
-  constants$samples <- as.matrix(samples)  
+  constants$samples <- as.matrix(samples)
   data <- rds$data
-    
+
   ls <- data_posteriors(samples, constants, data)
+
+  y <- ls$y
 
   # |>
   #   add_ids(t_id, dens)
