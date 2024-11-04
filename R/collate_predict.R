@@ -24,8 +24,20 @@ nodes <- "parameters"
 tasks_ls <- get_tasks(density_tasks, read_path, nodes)
 all_samples <- tasks_ls$all_sample
 
-print(str(all_samples))
+all_param_samples <- all_samples |>
+  select(
+    simulation,
+    start_density,
+    contains("beta1"),
+    contains("beta_p"),
+    contains("log_gamma["),
+    contains("log_rho["),
+    contains("p_mu["),
+    contains("log_nu"),
+    contains("phi_mu"),
+    contains("psi_phi")
+  )
 
-print(glimpse(all_samples))
+print(glimpse(all_param_samples))
 
 
