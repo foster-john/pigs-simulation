@@ -14,17 +14,21 @@ source("R/functions_predict.R")
 config <- config::get(config = config_name)
 
 args <- commandArgs(trailingOnly = TRUE)
-task_id <- as.numeric(args[1])
+array_id <- as.numeric(args[1])
 
-read_path <- get_path("read", config_name, task_id)
+read_path <- get_path("read", config_name, array_id)
 
 density_tasks <- list.files(read_path)
 message("Tasks to collate ", length(density_tasks))
 
+all_take <- tibble()
+all_p <- tibble()
+all_area <- tibble()
+all_theta <- tibble()
 
 pb <- txtProgressBar(max = length(density_tasks), style = 1)
-# for(i in seq_along(density_tasks)){
-for(i in 1:1){
+for(i in seq_along(density_tasks)){
+# for(i in 1:1){
 
   task_id <- density_tasks[i]
 
@@ -72,7 +76,7 @@ for(i in 1:1){
   extract_ls <- function(ls, dfy, dft){
 
     df <- purrr::pluck(ls, dfy)
-    
+
     id <- paste0("c", 1:ncol(df))
 
     y <- as.matrix(df)
@@ -142,20 +146,28 @@ for(i in 1:1){
               norm_rmse_theta = rmse_theta / mean(theta),
               rmsle_theta = sqrt(mean((log(value + 1) - log(theta + 1))^2)))
 
-  print(str(take_summaries))
-  print(str(p_summaries))
-  print(str(area_summaries))
-  print(str(theta_summaries))
+  take_summaries <- take_summaries |> add_ids(task_id, start_density)
+  p_summaries <- p_summaries |> add_ids(task_id, start_density)
+  area_summaries <- area_summaries |> add_ids(task_id, start_density)
+  theta_summaries <- theta_summaries |> add_ids(task_id, start_density)
 
-  # |>
-  #   add_ids(t_id, dens)
+  all_take <- bind_rows(all_take, take_summaries)
+  all_p <- bind_rows(all_p, p_summaries)
+  all_area <- bind_rows(all_area, area_summaries)
+  all_theta <- bind_rows(all_theta, theta_summaries)
+
 
   setTxtProgressBar(pb, i)
 }
 close(pb)
 
+path <- get_path("write", config_name, array_id)
+if(!dir.exists(path)) dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-
+write_rds(all_take, file.path(path, "predicted_take_summaries.rds"))
+write_rds(all_p, file.path(path, "predicted_p_summaries.rds"))
+write_rds(all_area, file.path(path, "predicted_area_summaries.rds"))
+write_rds(all_theta, file.path(path, "predicted_theta_summaries.rds"))
 
 
 
