@@ -68,21 +68,82 @@ for(i in 1:1){
   print(str(ls))
   print(str(take))
 
-  y_pred <- as.matrix(ls$y_pred)
-  id <- paste0("c", 1:ncol(y_pred))
-  colnames(y_pred) <- id
 
-  take <- take |>
-    mutate(id = id)
+  extract_ls <- function(dfy, dft){
 
-  y <- y_pred |>
-    as_tibble() |>
-    mutate(iter = 1:nrow(y_pred)) |>
-    pivot_longer(cols = -iter,
-                 names_to = "id") |>
-    left_join(take)
+    id <- paste0("c", 1:ncol(ls[[dfy]]))
 
-  print(str(y))
+    y <- as.matrix(ls[[dfy]])
+    colnames(y_pred) <- id
+
+    take <- dft |>
+      mutate(id = id)
+
+    y |>
+      as_tibble() |>
+      mutate(iter = 1:nrow(y_pred)) |>
+      pivot_longer(cols = -iter,
+                   names_to = "id") |>
+      left_join(dft)
+
+  }
+
+  y_iter <- extract_ls("y_pred", take)
+  p_iter <- extract_ls("p_pred", take)
+  area_iter <- extract_ls("potential_area_pred", take)
+  theta_iter <- extract_ls("theta_pred", take)
+
+  take_summaries <- y_iter |>
+    group_by(PPNum, N, take, method, effort_per, trap_count, theta, p,
+             potential_area, property, county, property_area) |>
+    summarise(low_take = quantile(value, 0.05),
+              med_take = quantile(value, 0.5),
+              high_take = quantile(value, 0.95),
+              var_take = var(value),
+              mbias_take = mean(value - take),
+              rmse_take = sqrt(mean((value - take)^2)),
+              rmsle_take = sqrt(mean((log(value + 1) - log(take + 1))^2)))
+
+  p_summaries <- p_iter |>
+    group_by(PPNum, N, take, method, effort_per, trap_count, theta, p,
+             potential_area, property, county, property_area) |>
+    summarise(low_p = quantile(value, 0.05),
+              med_p = quantile(value, 0.5),
+              high_p = quantile(value, 0.95),
+              var_p = var(value),
+              mbias_p = mean(value - p),
+              rmse_p = sqrt(mean((value - p)^2)),
+              norm_rmse_p = rmse_p / mean(p),
+              rmsle_p = sqrt(mean((log(value + 1) - log(p + 1))^2)))
+
+  area_summaries <- p_iter |>
+    group_by(PPNum, N, take, method, effort_per, trap_count, theta, p,
+             potential_area, property, county, property_area) |>
+    summarise(low_area = quantile(value, 0.05),
+              med_area = quantile(value, 0.5),
+              high_area = quantile(value, 0.95),
+              var_area = var(value),
+              mbias_area = mean(value - property_area),
+              rmse_area = sqrt(mean((value - property_area)^2)),
+              norm_rmse_area = rmse_area / mean(property_area),
+              rmsle_area = sqrt(mean((log(value + 1) - log(property_area + 1))^2)))
+
+  theta_summaries <- p_iter |>
+    group_by(PPNum, N, take, method, effort_per, trap_count, theta, p,
+             potential_area, property, county, property_area) |>
+    summarise(low_theta = quantile(value, 0.05),
+              med_theta = quantile(value, 0.5),
+              high_theta = quantile(value, 0.95),
+              var_theta = var(value),
+              mbias_theta = mean(value - theta),
+              rmse_theta = sqrt(mean((value - theta)^2)),
+              norm_rmse_theta = rmse_theta / mean(theta),
+              rmsle_theta = sqrt(mean((log(value + 1) - log(theta + 1))^2)))
+
+  print(str(take_summaries))
+  print(str(p_summaries))
+  print(str(area_summaries))
+  print(str(theta_summaries))
 
   # |>
   #   add_ids(t_id, dens)
