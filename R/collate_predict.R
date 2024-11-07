@@ -69,12 +69,14 @@ for(i in 1:1){
   print(str(take))
 
 
-  extract_ls <- function(dfy, dft){
+  extract_ls <- function(ls, dfy, dft){
 
-    id <- paste0("c", 1:ncol(ls[[dfy]]))
+    df <- purrr::pluck(ls, dfy)
 
-    y <- as.matrix(ls[[dfy]])
-    colnames(y_pred) <- id
+    id <- paste0("c", 1:ncol(df))
+
+    y <- as.matrix(df)
+    colnames(y) <- id
 
     take <- dft |>
       mutate(id = id)
@@ -88,10 +90,10 @@ for(i in 1:1){
 
   }
 
-  y_iter <- extract_ls("y_pred", take)
-  p_iter <- extract_ls("p_pred", take)
-  area_iter <- extract_ls("potential_area_pred", take)
-  theta_iter <- extract_ls("theta_pred", take)
+  y_iter <- extract_ls(ls, "y_pred", take)
+  p_iter <- extract_ls(ls, "p_pred", take)
+  area_iter <- extract_ls(ls, "potential_area_pred", take)
+  theta_iter <- extract_ls(ls, "theta_pred", take)
 
   take_summaries <- y_iter |>
     group_by(PPNum, N, take, method, effort_per, trap_count, theta, p,
