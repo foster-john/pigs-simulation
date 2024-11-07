@@ -68,21 +68,18 @@ for(i in 1:1){
   print(str(ls))
   print(str(take))
 
-  y_pred <- t(as.matrix(ls$y_pred))
-  colnames(y_pred) <- paste0("iter_", 1:ncol(y_pred))
+  y_pred <- as.matrix(ls$y_pred)
+  colnames(y_pred) <- paste0("c", 1:ncol(y_pred))
 
-  print(str(y_pred))
-  
-  y_pred <- y_pred |>
+  take <- take |>
+    mutate(id = paste0("c", 1:nrow(take)))
+
+  y_pred |>
     as_tibble() |>
-    mutate(PPNum = take$PPNum,
-           N = take$N,
-           take = take$take,
-           property = take$property)
-
-  left_join(y_pred, take)
-
-
+    mutate(iter = 1:nrow(y_pred)) |>
+    pivot_longer(cols = -iter,
+                 names_to = "id") |>
+    left_join(take)
 
   # |>
   #   add_ids(t_id, dens)
