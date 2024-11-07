@@ -69,10 +69,11 @@ for(i in 1:1){
   print(str(take))
 
   y_pred <- as.matrix(ls$y_pred)
-  colnames(y_pred) <- paste0("c", 1:ncol(y_pred))
+  id <- paste0("c", 1:ncol(y_pred))
+  colnames(y_pred) <- id
 
   take <- take |>
-    mutate(id = paste0("c", 1:nrow(take)))
+    mutate(id = id)
 
   y_pred |>
     as_tibble() |>
