@@ -68,7 +68,7 @@ for(i in 1:1){
   print(str(ls))
   print(str(take))
 
-  ypred <- t(ls$ypred)
+  ypred <- t(as.matrix(ls$ypred))
   colnames(ypred) <- paste0("iter_", 1:ncol(ypred))
 
   y_pred <- ypred |>
