@@ -68,10 +68,10 @@ for(i in 1:1){
   print(str(ls))
   print(str(take))
 
-  ypred <- t(as.matrix(ls$ypred))
-  colnames(ypred) <- paste0("iter_", 1:ncol(ypred))
+  y_pred <- t(as.matrix(ls$y_pred))
+  colnames(y_pred) <- paste0("iter_", 1:ncol(y_pred))
 
-  y_pred <- ypred |>
+  y_pred <- y_pred |>
     as_tibble() |>
     mutate(PPNum = take$PPNum,
            N = take$N,
