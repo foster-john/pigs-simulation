@@ -60,7 +60,7 @@ for(i in 1:1){
   ls <- data_posteriors(samples, constants, data)
 
   N <- rds$N
-  take <- rds$take
+  take <- as.tibble(rds$take)
 
 
   message("Take")
