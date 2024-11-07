@@ -72,7 +72,7 @@ for(i in 1:1){
   extract_ls <- function(ls, dfy, dft){
 
     df <- purrr::pluck(ls, dfy)
-
+    
     id <- paste0("c", 1:ncol(df))
 
     y <- as.matrix(df)
@@ -86,7 +86,7 @@ for(i in 1:1){
       mutate(iter = 1:nrow(y)) |>
       pivot_longer(cols = -iter,
                    names_to = "id") |>
-      left_join(dft)
+      left_join(take)
 
   }
 
