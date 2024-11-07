@@ -60,7 +60,7 @@ for(i in 1:1){
   ls <- data_posteriors(samples, constants, data)
 
   N <- rds$N
-  take <- as.tibble(rds$take)
+  take <- rds$take
 
 
   message("Take")
@@ -71,6 +71,8 @@ for(i in 1:1){
   y_pred <- t(as.matrix(ls$y_pred))
   colnames(y_pred) <- paste0("iter_", 1:ncol(y_pred))
 
+  print(str(y_pred))
+  
   y_pred <- y_pred |>
     as_tibble() |>
     mutate(PPNum = take$PPNum,
