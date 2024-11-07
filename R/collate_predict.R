@@ -81,7 +81,7 @@ for(i in 1:1){
 
     y |>
       as_tibble() |>
-      mutate(iter = 1:nrow(y_pred)) |>
+      mutate(iter = 1:nrow(y)) |>
       pivot_longer(cols = -iter,
                    names_to = "id") |>
       left_join(dft)
