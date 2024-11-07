@@ -75,12 +75,14 @@ for(i in 1:1){
   take <- take |>
     mutate(id = id)
 
-  y_pred |>
+  y <- y_pred |>
     as_tibble() |>
     mutate(iter = 1:nrow(y_pred)) |>
     pivot_longer(cols = -iter,
                  names_to = "id") |>
     left_join(take)
+
+  print(str(y))
 
   # |>
   #   add_ids(t_id, dens)
